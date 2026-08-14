@@ -13,6 +13,6 @@ export interface Order {
   items: OrderItemSnapshot[];
   total: number;
   status: OrderStatus;
-  CreatedAt: number;
+  createdAt: number;
   updatedAt?: number;
 }

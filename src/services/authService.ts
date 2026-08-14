@@ -43,7 +43,18 @@ export async function signIn(
   return ensureUserProfile(cred.user.uid, cred.user.email ?? email);
 }
 
-export async function signInWithGoogle(): Promise<UserProfile | null> {
+export async function signInWithGoogle(): Promise<UserProfile> {
+  const cred = await signInWithPopup(auth, new GoogleAuthProvider());
+  return ensureUserProfile(cred.user.uid, cred.user.email ?? "");
+}
+
+export async function signOut(): Promise<void> {
+  await firebaseSignOut(auth);
+}
+
+export async function fetchUserProfile(
+  uid: string,
+): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, "users", uid));
   return snap.exists() ? (snap.data() as UserProfile) : null;
 }
