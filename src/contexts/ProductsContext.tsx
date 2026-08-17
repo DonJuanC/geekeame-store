@@ -41,8 +41,9 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
         setProducts(result);
         setStatus("idle");
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
+        console.error(err);
         setError("No pudimos cargar los productos. Intenta de nuevo .");
         setStatus("error");
       });

@@ -5,6 +5,7 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { HomePage } from "./pages/HomePage";
 import { AdminPage } from "./pages/AdminPage";
 import { ProductDetailPage } from "./pages/ProductDetailPage";
+import { CartPage } from "./pages/CartPage";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           </RequireAdmin>
         }
       />
+      <Route path="/cart" element={<CartPage />} />
     </Routes>
   );
 }

@@ -4,6 +4,7 @@ import { getProductById } from "../services/productsService";
 import { LoadingState } from "../components/states/LoadingState";
 import { ErrorState } from "../components/states/ErrorState";
 import type { Product } from "../types/product";
+import { useCart } from "../hooks/useCart";
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -11,6 +12,7 @@ export function ProductDetailPage() {
   const [status, setStatus] = useState<
     "loading" | "idle" | "error" | "not-found"
   >("loading");
+  const { addItem } = useCart();
 
   useEffect(() => {
     if (!id) return;
@@ -48,6 +50,19 @@ export function ProductDetailPage() {
       <p className="text-gray-600 my-2">{product.description}</p>
       <p className="text-lg font-medium">
         ${product.price.toLocaleString("es-CO")}
+        <button
+          onClick={() =>
+            addItem({
+              productId: product.id,
+              name: product.name,
+              price: product.price,
+              imageUrl: product.imageUrl,
+            })
+          }
+          className="border rounded px-4 py-2 mt-3"
+        >
+          Agregar al carrito
+        </button>
       </p>
     </div>
   );

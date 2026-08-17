@@ -5,3 +5,16 @@ export interface CartItem {
   imageUrl: string;
   quantity: number;
 }
+
+export interface CartState {
+  items: CartItem[];
+}
+
+export type CartAction =
+  | { type: "ADD_ITEM"; payload: Omit<CartItem, "quantity"> }
+  | { type: "REMOVE_ITEM"; payload: { productId: string } }
+  | {
+      type: "UPDATE_QUANTITY";
+      payload: { productId: string; quantity: number };
+    }
+  | { type: "CLEAR_CART" };

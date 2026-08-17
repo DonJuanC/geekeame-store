@@ -5,11 +5,14 @@ import { ProductCard } from "../components/product/ProductCard";
 import { LoadingState } from "../components/states/LoadingState";
 import { EmptyState } from "../components/states/EmptyState";
 import { ErrorState } from "../components/states/ErrorState";
+import { useCart } from "../hooks/useCart";
 
 const CATEGORIES = [
-  { id: "pines", label: "Pines " },
+  { id: "pines", label: "Pines" },
   { id: "stickers", label: "Stickers" },
   { id: "cuadros-punto-cruz", label: "Cuadros punto de cruz" },
+  { id: "llaveros", label: "Llaveros" },
+  { id: "tazas", label: "Tazas" },
 ];
 
 export function HomePage() {
@@ -23,6 +26,8 @@ export function HomePage() {
     setCategoryId,
     setSearchInput,
   } = useProducts();
+  const { items } = useCart();
+  const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
     <div className="p-4 max-w-5x1 mx-auto">
@@ -32,7 +37,7 @@ export function HomePage() {
           <div className="text-sm flex items-center gap-3">
             <span>{user.email}</span>
             <button
-              onClick={() => signOut}
+              onClick={() => signOut()}
               className="border rounded px-3 py-1"
             >
               Salir
@@ -43,6 +48,10 @@ export function HomePage() {
             Iniciar sesión
           </Link>
         )}
+
+        <Link to="/cart" className="border rounded px-3 py-1 text-sm">
+          Carrito ({cartCount})
+        </Link>
       </header>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
