@@ -67,3 +67,62 @@ button:not(:disabled):active {
 .cart-badge-bump {
   animation: cart-bump 0.3s ease;
 }
+
+/* Logo del header (StoreHeader): un wiggle corto al pasar el mouse, para
+   que la marca se sienta "viva" sin ser una distracción permanente (no
+   es un loop infinito -- solo corre en :hover, como el resto de los
+   micro-feedbacks del sitio: active:scale en botones, cart-bump). */
+@keyframes logo-wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-6deg) scale(1.05);
+  }
+  75% {
+    transform: rotate(6deg) scale(1.05);
+  }
+}
+
+.logo-hover-wiggle:hover {
+  animation: logo-wiggle 0.4s ease;
+}
+
+/* Hero de HomePage (ver HeroSection.tsx): los emojis de categoría flotan
+   de fondo en loop infinito, cada uno con su propio delay/duración
+   (inline style, no acá) para que no floten todos sincronizados -- un
+   solo @keyframes reutilizado por todos, la variación viene de
+   animation-delay/duration por instancia. */
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-14px) rotate(8deg);
+  }
+}
+
+.hero-float {
+  animation: hero-float 4s ease-in-out infinite;
+}
+
+/* Entrada del título/CTA del hero: un solo fade+slide al montar la
+   página (no infinito, a diferencia de hero-float) -- se aplica directo
+   en HeroSection.tsx sin JS/IntersectionObserver, ya que el hero siempre
+   está visible apenas carga Home. */
+@keyframes hero-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-fade-in-up {
+  animation: hero-fade-in-up 0.6s ease-out both;
+}

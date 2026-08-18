@@ -20,6 +20,12 @@ import { useProducts } from "../../hooks/useProducts";
 // en v4 requiere @custom-variant en CSS, otra directiva custom -- mismo
 // riesgo que @theme) sino un booleano de useTheme() que elige entre dos
 // sets de clases arbitrarias ya confirmadas funcionando.
+//
+// z-20 en el header (antes z-10, igual que el corazón de FavoriteButton en
+// ProductCard): con el mismo z-index, el corazón -- que viene después en
+// el DOM -- ganaba el empate y se pintaba encima del header sticky al
+// scrollear, en vez de quedar tapado detrás. El header necesita quedar
+// por encima de cualquier contenido que pase debajo al hacer scroll.
 export function StoreHeader() {
   const { user, signOut } = useAuth();
   const { items } = useCart();
@@ -50,7 +56,7 @@ export function StoreHeader() {
 
   return (
     <header
-      className={`border-b sticky top-0 z-10 ${
+      className={`border-b sticky top-0 z-20 ${
         isDark
           ? "bg-[#161320] border-[#2e2a45]"
           : "bg-white border-[#ede9fe]"
