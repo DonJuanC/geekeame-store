@@ -218,7 +218,7 @@ export function AdminProductFormPage() {
             onBlur={() => handleBlur("categoryId")}
             className="w-full border rounded p-2 mt-1"
           >
-            <option value="">Elegí una categoría</option>
+            <option value="">Elige una categoría</option>
             {PRODUCT_CATEGORIES.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.label}
