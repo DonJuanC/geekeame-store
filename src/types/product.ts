@@ -1,13 +1,15 @@
+export type ProductCategoryId =
+  | "pines"
+  | "stickers"
+  | "cuadros-punto-cruz"
+  | "llaveros"
+  | "tazas";
+
 export interface Product {
   id: string;
   name: string;
   nameLower: string;
-  categoryId:
-    | "pines"
-    | "stickers"
-    | "cuadros-punto-cruz"
-    | "llaveros"
-    | "tazas";
+  categoryId: ProductCategoryId;
   price: number;
   stock: number;
   description: string;

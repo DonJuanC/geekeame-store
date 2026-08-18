@@ -54,6 +54,17 @@ export async function getProductById(id: string): Promise<Product | null> {
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as Product) : null;
 }
 
+// Listado para el panel admin: sin filtro de categoría/búsqueda (el admin
+// necesita ver todo el catálogo, no lo que un cliente filtró) y ordenado
+// por nombre en vez de por fecha de creación, que es más útil para
+// gestionar/ubicar productos en una tabla. maxResults en 500 para no
+// truncar el catálogo administrado.
+export async function listAllProductsForAdmin(): Promise<Product[]> {
+  const q = query(collection(db, "products"), orderBy("name"), limit(500));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Product);
+}
+
 export type ProductInput = Omit<
   Product,
   "id" | "nameLower" | "createdAt" | "updatedAt"
