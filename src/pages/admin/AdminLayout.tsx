@@ -28,6 +28,14 @@ export function AdminLayout() {
               >
                 Pedidos
               </NavLink>
+              <NavLink
+                to="/admin/analytics"
+                className={({ isActive }) =>
+                  isActive ? "underline" : "text-gray-300"
+                }
+              >
+                Analytics
+              </NavLink>
             </nav>
           </div>
           <Link to="/" className="text-sm text-gray-300 underline">
