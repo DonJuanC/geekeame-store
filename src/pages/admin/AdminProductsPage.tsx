@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTheme } from "../../hooks/useTheme";
 import {
   deleteProduct,
   listAllProductsForAdmin,
@@ -15,6 +16,8 @@ import { ErrorState } from "../../components/states/ErrorState";
 type Status = "loading" | "idle" | "error";
 
 export function AdminProductsPage() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [products, setProducts] = useState<Product[]>([]);
   const [status, setStatus] = useState<Status>("loading");
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -69,33 +72,37 @@ export function AdminProductsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-xl font-bold">Productos</h1>
         <Link
           to="/admin/products/new"
-          className="border rounded px-3 py-1 text-sm bg-black text-white"
+          className="rounded-full px-3 py-1.5 text-sm font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors"
         >
           + Nuevo producto
         </Link>
       </div>
 
-      {actionError && <p className="text-red-600 text-sm">{actionError}</p>}
+      {actionError && (
+        <p className={isDark ? "text-[#f87171] text-sm" : "text-red-600 text-sm"}>{actionError}</p>
+      )}
 
-      {status === "loading" && <ProductsTableSkeleton />}
+      {status === "loading" && <ProductsTableSkeleton dark={isDark} />}
       {status === "error" && (
         <ErrorState
           message="No pudimos cargar los productos."
           onRetry={handleRetry}
+          dark={isDark}
         />
       )}
       {status === "idle" && products.length === 0 && (
-        <EmptyState message="Todavía no hay productos en el catálogo." />
+        <EmptyState message="Todavía no hay productos en el catálogo." dark={isDark} />
       )}
       {status === "idle" && products.length > 0 && (
         <ProductsTable
           products={products}
           deletingId={deletingId}
           onDelete={handleDelete}
+          dark={isDark}
         />
       )}
     </div>

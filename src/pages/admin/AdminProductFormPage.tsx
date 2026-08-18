@@ -5,6 +5,7 @@ import {
   type FormEvent,
 } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useTheme } from "../../hooks/useTheme";
 import {
   createProduct,
   getProductById,
@@ -90,6 +91,8 @@ export function AdminProductFormPage() {
   const { id } = useParams<{ id: string }>();
   const isEditing = Boolean(id);
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const [fields, setFields] = useState<FormFields>(EMPTY_FIELDS);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -229,19 +232,29 @@ export function AdminProductFormPage() {
     }
   }
 
+  const backLink = (
+    <Link
+      to="/admin"
+      className={`text-sm font-medium ${
+        isDark ? "text-[#c4b5fd] hover:text-[#a78bfa]" : "text-[#6d28d9] hover:text-[#4c1d95]"
+      }`}
+    >
+      ← Volver al listado
+    </Link>
+  );
+
   if (isLoadingProduct) {
-    return <p className="text-gray-500">Cargando producto…</p>;
+    return <p className={isDark ? "text-[#9ca3af]" : "text-gray-500"}>Cargando producto…</p>;
   }
 
   if (status === "error") {
     return (
       <div className="flex flex-col gap-4">
-        <Link to="/admin" className="text-sm underline">
-          ← Volver al listado
-        </Link>
+        {backLink}
         <ErrorState
           message={globalError ?? "No pudimos cargar el producto."}
           onRetry={handleRetry}
+          dark={isDark}
         />
       </div>
     );
@@ -250,21 +263,21 @@ export function AdminProductFormPage() {
   if (status === "not-found") {
     return (
       <div>
-        <p className="text-red-600">Este producto no existe.</p>
-        <Link to="/admin" className="text-sm underline">
-          ← Volver al listado
-        </Link>
+        <p className={isDark ? "text-[#f87171]" : "text-red-600"}>Este producto no existe.</p>
+        {backLink}
       </div>
     );
   }
 
   const isSubmitting = status === "submitting" || imageStatus === "uploading";
+  const inputClass = `w-full rounded-lg p-2 mt-1 border focus:outline-none focus:ring-2 focus:ring-[#c4b5fd] ${
+    isDark ? "bg-[#161320] border-[#2e2a45] text-[#f5f3ff]" : "border-[#ede9fe]"
+  }`;
+  const errorClass = isDark ? "text-[#f87171] text-sm mt-1" : "text-red-600 text-sm mt-1";
 
   return (
     <div className="max-w-lg">
-      <Link to="/admin" className="text-sm underline">
-        ← Volver al listado
-      </Link>
+      {backLink}
       <h1 className="text-xl font-bold my-4">
         {isEditing ? "Editar producto" : "Nuevo producto"}
       </h1>
@@ -280,11 +293,9 @@ export function AdminProductFormPage() {
             disabled={isSubmitting}
             onChange={(e) => setField("name", e.target.value)}
             onBlur={() => handleBlur("name")}
-            className="w-full border rounded p-2 mt-1"
+            className={inputClass}
           />
-          {errors.name && (
-            <p className="text-red-600 text-sm mt-1">{errors.name}</p>
-          )}
+          {errors.name && <p className={errorClass}>{errors.name}</p>}
         </div>
 
         <div>
@@ -299,7 +310,7 @@ export function AdminProductFormPage() {
               setField("categoryId", e.target.value as ProductCategoryId)
             }
             onBlur={() => handleBlur("categoryId")}
-            className="w-full border rounded p-2 mt-1"
+            className={inputClass}
           >
             <option value="">Elige una categoría</option>
             {PRODUCT_CATEGORIES.map((c) => (
@@ -308,12 +319,10 @@ export function AdminProductFormPage() {
               </option>
             ))}
           </select>
-          {errors.categoryId && (
-            <p className="text-red-600 text-sm mt-1">{errors.categoryId}</p>
-          )}
+          {errors.categoryId && <p className={errorClass}>{errors.categoryId}</p>}
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <label className="text-sm font-medium" htmlFor="price">
               Precio
@@ -326,11 +335,9 @@ export function AdminProductFormPage() {
               disabled={isSubmitting}
               onChange={(e) => setField("price", e.target.value)}
               onBlur={() => handleBlur("price")}
-              className="w-full border rounded p-2 mt-1"
+              className={inputClass}
             />
-            {errors.price && (
-              <p className="text-red-600 text-sm mt-1">{errors.price}</p>
-            )}
+            {errors.price && <p className={errorClass}>{errors.price}</p>}
           </div>
 
           <div className="flex-1">
@@ -345,11 +352,9 @@ export function AdminProductFormPage() {
               disabled={isSubmitting}
               onChange={(e) => setField("stock", e.target.value)}
               onBlur={() => handleBlur("stock")}
-              className="w-full border rounded p-2 mt-1"
+              className={inputClass}
             />
-            {errors.stock && (
-              <p className="text-red-600 text-sm mt-1">{errors.stock}</p>
-            )}
+            {errors.stock && <p className={errorClass}>{errors.stock}</p>}
           </div>
         </div>
 
@@ -363,22 +368,22 @@ export function AdminProductFormPage() {
             accept={ALLOWED_IMAGE_TYPES.join(",")}
             disabled={isSubmitting}
             onChange={handleImageChange}
-            className="w-full border rounded p-2 mt-1"
+            className={inputClass}
           />
           {imageStatus === "uploading" && (
-            <p className="text-gray-500 text-sm mt-1">Subiendo imagen…</p>
+            <p className={`text-sm mt-1 ${isDark ? "text-[#9ca3af]" : "text-gray-500"}`}>
+              Subiendo imagen…
+            </p>
           )}
           {imageStatus === "error" && imageUploadError && (
-            <p className="text-red-600 text-sm mt-1">{imageUploadError}</p>
+            <p className={errorClass}>{imageUploadError}</p>
           )}
-          {errors.imageUrl && (
-            <p className="text-red-600 text-sm mt-1">{errors.imageUrl}</p>
-          )}
+          {errors.imageUrl && <p className={errorClass}>{errors.imageUrl}</p>}
           {fields.imageUrl && (
             <img
               src={fields.imageUrl}
               alt="Preview"
-              className="w-20 h-20 object-cover rounded mt-2"
+              className="w-20 h-20 object-cover rounded-lg mt-2"
             />
           )}
         </div>
@@ -393,20 +398,18 @@ export function AdminProductFormPage() {
             disabled={isSubmitting}
             onChange={(e) => setField("description", e.target.value)}
             onBlur={() => handleBlur("description")}
-            className="w-full border rounded p-2 mt-1"
+            className={inputClass}
             rows={4}
           />
-          {errors.description && (
-            <p className="text-red-600 text-sm mt-1">{errors.description}</p>
-          )}
+          {errors.description && <p className={errorClass}>{errors.description}</p>}
         </div>
 
-        {globalError && <p className="text-red-600 text-sm">{globalError}</p>}
+        {globalError && <p className={isDark ? "text-[#f87171] text-sm" : "text-red-600 text-sm"}>{globalError}</p>}
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="border rounded px-4 py-2 bg-black text-white disabled:opacity-50"
+          className="rounded-full px-4 py-2.5 font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] disabled:opacity-50 transition-colors"
         >
           {isSubmitting
             ? "Guardando…"

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTheme } from "../../hooks/useTheme";
 import { listAllOrders } from "../../services/ordersService";
 import { listAllProductsForAdmin } from "../../services/productsService";
 import {
@@ -21,6 +22,8 @@ function money(value: number): string {
 }
 
 export function AdminAnalyticsPage() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [status, setStatus] = useState<Status>("loading");
@@ -48,12 +51,14 @@ export function AdminAnalyticsPage() {
     fetchData();
   }
 
-  if (status === "loading") return <LoadingState label="Cargando métricas..." />;
+  if (status === "loading")
+    return <LoadingState label="Cargando métricas..." dark={isDark} />;
   if (status === "error")
     return (
       <ErrorState
         message="No pudimos cargar las métricas."
         onRetry={handleRetry}
+        dark={isDark}
       />
     );
 
@@ -63,22 +68,27 @@ export function AdminAnalyticsPage() {
   const dailySales = computeDailySales(orders);
   const lowStock = computeLowStock(products);
 
+  const cardClass = `rounded-xl border p-4 ${isDark ? "bg-[#1c1a29] border-[#2e2a45]" : "border-[#ede9fe]"}`;
+  const mutedText = isDark ? "text-[#9ca3af]" : "text-gray-500";
+  const borderColor = isDark ? "border-[#2e2a45]" : "";
+  const pillClass = `rounded-full border px-3 py-1 ${isDark ? "border-[#3f3a5c]" : "border-[#ddd6fe]"}`;
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-bold">Analytics</h1>
 
       {/* Ingresos solo cuentan órdenes "completed" -- ver analyticsService. */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="border rounded p-4">
-          <p className="text-xs text-gray-500">Ingresos totales</p>
+        <div className={cardClass}>
+          <p className={`text-xs ${mutedText}`}>Ingresos totales</p>
           <p className="text-2xl font-bold">{money(revenue.totalRevenue)}</p>
         </div>
-        <div className="border rounded p-4">
-          <p className="text-xs text-gray-500">Pedidos completados</p>
+        <div className={cardClass}>
+          <p className={`text-xs ${mutedText}`}>Pedidos completados</p>
           <p className="text-2xl font-bold">{revenue.completedCount}</p>
         </div>
-        <div className="border rounded p-4">
-          <p className="text-xs text-gray-500">Ticket promedio</p>
+        <div className={cardClass}>
+          <p className={`text-xs ${mutedText}`}>Ticket promedio</p>
           <p className="text-2xl font-bold">
             {money(Math.round(revenue.averageOrderValue))}
           </p>
@@ -90,7 +100,7 @@ export function AdminAnalyticsPage() {
         <div className="flex gap-3 flex-wrap text-sm">
           {(Object.keys(byStatus) as Array<keyof typeof byStatus>).map(
             (key) => (
-              <span key={key} className="border rounded px-3 py-1">
+              <span key={key} className={pillClass}>
                 {ORDER_STATUS_LABELS[key]}: <strong>{byStatus[key]}</strong>
               </span>
             ),
@@ -103,7 +113,7 @@ export function AdminAnalyticsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="text-left text-gray-500">
+              <tr className={`text-left ${mutedText}`}>
                 <th className="py-1 pr-4">Día</th>
                 <th className="py-1 pr-4">Pedidos</th>
                 <th className="py-1">Ingresos</th>
@@ -111,7 +121,7 @@ export function AdminAnalyticsPage() {
             </thead>
             <tbody>
               {dailySales.map((d) => (
-                <tr key={d.date} className="border-t">
+                <tr key={d.date} className={`border-t ${borderColor}`}>
                   <td className="py-1 pr-4">{d.date}</td>
                   <td className="py-1 pr-4">{d.orders}</td>
                   <td className="py-1">{money(d.revenue)}</td>
@@ -125,14 +135,14 @@ export function AdminAnalyticsPage() {
       <section>
         <h2 className="font-bold mb-2">Productos más vendidos</h2>
         {topProducts.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className={`text-sm ${mutedText}`}>
             Todavía no hay pedidos completados para calcular esto.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="text-left text-gray-500">
+                <tr className={`text-left ${mutedText}`}>
                   <th className="py-1 pr-4">Producto</th>
                   <th className="py-1 pr-4">Unidades vendidas</th>
                   <th className="py-1">Ingresos</th>
@@ -140,7 +150,7 @@ export function AdminAnalyticsPage() {
               </thead>
               <tbody>
                 {topProducts.map((p) => (
-                  <tr key={p.productId} className="border-t">
+                  <tr key={p.productId} className={`border-t ${borderColor}`}>
                     <td className="py-1 pr-4">{p.name}</td>
                     <td className="py-1 pr-4">{p.quantity}</td>
                     <td className="py-1">{money(p.revenue)}</td>
@@ -155,18 +165,13 @@ export function AdminAnalyticsPage() {
       <section>
         <h2 className="font-bold mb-2">Stock bajo (≤3 unidades)</h2>
         {lowStock.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            Ningún producto está bajo de stock.
-          </p>
+          <p className={`text-sm ${mutedText}`}>Ningún producto está bajo de stock.</p>
         ) : (
           <ul className="flex flex-col gap-1 text-sm">
             {lowStock.map((p) => (
-              <li
-                key={p.id}
-                className="border rounded px-3 py-1 flex justify-between"
-              >
+              <li key={p.id} className={`${pillClass} flex justify-between`}>
                 <span>{p.name}</span>
-                <span className={p.stock === 0 ? "text-red-600 font-bold" : ""}>
+                <span className={p.stock === 0 ? (isDark ? "text-[#f87171] font-bold" : "text-red-600 font-bold") : ""}>
                   {p.stock} unidades
                 </span>
               </li>

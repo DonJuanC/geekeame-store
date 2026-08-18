@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTheme } from "../../hooks/useTheme";
 import {
   listAllOrders,
   updateOrderStatus,
@@ -20,6 +21,8 @@ const STATUS_FILTERS: Array<{ value: OrderStatus | "all"; label: string }> = [
 ];
 
 export function AdminOrdersPage() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [orders, setOrders] = useState<Order[]>([]);
   const [status, setStatus] = useState<Status>("loading");
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
@@ -85,8 +88,12 @@ export function AdminOrdersPage() {
           <button
             key={f.value}
             onClick={() => setFilter(f.value)}
-            className={`border rounded px-3 py-1 ${
-              filter === f.value ? "bg-black text-white" : ""
+            className={`rounded-full border px-3 py-1 transition-colors ${
+              filter === f.value
+                ? "bg-[#7c3aed] border-[#7c3aed] text-white"
+                : isDark
+                  ? "border-[#3f3a5c] text-[#c4b5fd] hover:bg-[#211d34]"
+                  : "border-[#ddd6fe] hover:bg-[#f5f3ff]"
             }`}
           >
             {f.label}
@@ -94,23 +101,27 @@ export function AdminOrdersPage() {
         ))}
       </div>
 
-      {actionError && <p className="text-red-600 text-sm">{actionError}</p>}
+      {actionError && (
+        <p className={isDark ? "text-[#f87171] text-sm" : "text-red-600 text-sm"}>{actionError}</p>
+      )}
 
-      {status === "loading" && <OrdersTableSkeleton />}
+      {status === "loading" && <OrdersTableSkeleton dark={isDark} />}
       {status === "error" && (
         <ErrorState
           message="No pudimos cargar los pedidos."
           onRetry={handleRetry}
+          dark={isDark}
         />
       )}
       {status === "idle" && visibleOrders.length === 0 && (
-        <EmptyState message="No hay pedidos con este filtro." />
+        <EmptyState message="No hay pedidos con este filtro." dark={isDark} />
       )}
       {status === "idle" && visibleOrders.length > 0 && (
         <OrdersTable
           orders={visibleOrders}
           updatingId={updatingId}
           onStatusChange={handleStatusChange}
+          dark={isDark}
         />
       )}
     </div>
