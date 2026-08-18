@@ -30,7 +30,7 @@ export function HomePage() {
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <div className="p-4 max-w-5x1 mx-auto">
+    <div className="p-4 max-w-5xl mx-auto">
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold">Geekeame</h1>
         {user ? (
@@ -44,7 +44,7 @@ export function HomePage() {
             </button>
           </div>
         ) : (
-          <Link to="login" className="border rounded px-3 py-1 text-sm">
+          <Link to="/login" className="border rounded px-3 py-1 text-sm">
             Iniciar sesión
           </Link>
         )}
@@ -52,6 +52,12 @@ export function HomePage() {
         <Link to="/cart" className="border rounded px-3 py-1 text-sm">
           Carrito ({cartCount})
         </Link>
+
+        {user && (
+          <Link to="/orders" className="border rounded px-3 py-1 text-sm">
+            Mis pedidos
+          </Link>
+        )}
       </header>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

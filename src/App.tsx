@@ -6,6 +6,9 @@ import { HomePage } from "./pages/HomePage";
 import { AdminPage } from "./pages/AdminPage";
 import { ProductDetailPage } from "./pages/ProductDetailPage";
 import { CartPage } from "./pages/CartPage";
+import { RequireAuth } from "./components/auth/RequireAuth";
+import { CheckoutPage } from "./pages/CheckoutPage";
+import { OrdersPage } from "./pages/OrdersPage";
 
 function App() {
   return (
@@ -23,6 +26,22 @@ function App() {
         }
       />
       <Route path="/cart" element={<CartPage />} />
+      <Route
+        path="/checkout"
+        element={
+          <RequireAuth>
+            <CheckoutPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/orders"
+        element={
+          <RequireAuth>
+            <OrdersPage />
+          </RequireAuth>
+        }
+      />
     </Routes>
   );
 }

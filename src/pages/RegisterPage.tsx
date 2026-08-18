@@ -29,7 +29,7 @@ export function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <h1 className="text-xl font-bold">Iniciar sesión</h1>
+        <h1 className="text-xl font-bold">Crear cuenta</h1>
         {error && <p className="text-red-600 text-sm">{error}</p>}
         <input
           type="email"
@@ -56,7 +56,7 @@ export function RegisterPage() {
         </button>
         <p className="text-sm text-center">
           ¿Ya tienes cuenta?{" "}
-          <Link to="/register" className="underline">
+          <Link to="/login" className="underline">
             Inicia sesión
           </Link>
         </p>

@@ -1,11 +1,14 @@
 import {
+  addDoc,
   collection,
+  deleteDoc,
   getDocs,
   limit,
   orderBy,
   query,
   startAt,
   endAt,
+  updateDoc,
   where,
   doc,
   getDoc,
@@ -16,11 +19,13 @@ import type { Product } from "../types/product";
 export interface ListProductsParams {
   categoryId?: string | null;
   searchTerm?: string;
+  maxResults?: number;
 }
 
 export async function listProducts({
   categoryId,
   searchTerm,
+  maxResults = 60,
 }: ListProductsParams): Promise<Product[]> {
   const constraints = [];
 
@@ -37,7 +42,7 @@ export async function listProducts({
     constraints.push(orderBy("createdAt", "desc"));
   }
 
-  constraints.push(limit(60));
+  constraints.push(limit(maxResults));
 
   const q = query(collection(db, "products"), ...constraints);
   const snap = await getDocs(q);
@@ -47,4 +52,34 @@ export async function listProducts({
 export async function getProductById(id: string): Promise<Product | null> {
   const snap = await getDoc(doc(db, "products", id));
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as Product) : null;
+}
+
+export type ProductInput = Omit<
+  Product,
+  "id" | "nameLower" | "createdAt" | "updatedAt"
+>;
+
+export async function createProduct(input: ProductInput): Promise<string> {
+  const docRef = await addDoc(collection(db, "products"), {
+    ...input,
+    nameLower: input.name.toLowerCase(),
+    createdAt: Date.now(),
+  });
+  return docRef.id;
+}
+
+export async function updateProduct(
+  id: string,
+  patch: Partial<ProductInput>,
+): Promise<void> {
+  const ref = doc(db, "products", id);
+  await updateDoc(ref, {
+    ...patch,
+    ...(patch.name ? { nameLower: patch.name.toLowerCase() } : {}),
+    updatedAt: Date.now(),
+  });
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  await deleteDoc(doc(db, "products", id));
 }

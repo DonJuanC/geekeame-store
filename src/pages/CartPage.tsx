@@ -79,6 +79,12 @@ export function CartPage() {
           Vaciar carrito
         </button>
       </div>
+      <Link
+        to="/checkout"
+        className="block text-center border rounded px-4 py-2 mt-4 bg-black text-white"
+      >
+        Proceder al pago
+      </Link>
     </div>
   );
 }
