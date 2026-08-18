@@ -1,4 +1,9 @@
-import { useEffect, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   createProduct,
@@ -6,8 +11,10 @@ import {
   updateProduct,
   type ProductInput,
 } from "../../services/productsService";
+import { uploadProductImage } from "../../services/uploadService";
 import { PRODUCT_CATEGORIES } from "../../constants/categories";
 import type { ProductCategoryId } from "../../types/product";
+import { ErrorState } from "../../components/states/ErrorState";
 
 type FormFields = {
   name: string;
@@ -28,6 +35,14 @@ const EMPTY_FIELDS: FormFields = {
   description: "",
   imageUrl: "",
 };
+
+const ALLOWED_IMAGE_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+];
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
 
 function validate(fields: FormFields): FormErrors {
   const errors: FormErrors = {};
@@ -51,7 +66,7 @@ function validate(fields: FormFields): FormErrors {
   }
 
   if (!fields.imageUrl.trim()) {
-    errors.imageUrl = "La URL de la imagen es obligatoria.";
+    errors.imageUrl = "La imagen del producto es obligatoria.";
   }
 
   if (!fields.description.trim()) {
@@ -78,22 +93,29 @@ export function AdminProductFormPage() {
 
   const [fields, setFields] = useState<FormFields>(EMPTY_FIELDS);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [status, setStatus] = useState<"editing" | "submitting" | "not-found">(
-    "editing",
-  );
+  const [status, setStatus] = useState<
+    "editing" | "submitting" | "not-found" | "error"
+  >("editing");
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [imageStatus, setImageStatus] = useState<
+    "idle" | "uploading" | "error"
+  >("idle");
+  const [imageUploadError, setImageUploadError] = useState<string | null>(
+    null,
+  );
   // Id para el que "fields"/"status" ya son válidos. Mientras no coincida
   // con el id actual de la ruta seguimos "cargando" -- se deriva más abajo
   // en vez de resetear con un setStatus("loading") síncrono al arrancar el
-  // efecto (mismo motivo que en AdminProductsPage: react-hooks/set-state-in-effect).
+  // efecto (react-hooks/set-state-in-effect). Extraído a fetchProduct para
+  // poder reusarlo desde el botón "Reintentar".
   const [loadedId, setLoadedId] = useState<string | null>(null);
-  useEffect(() => {
-    if (!id) return;
+
+  function fetchProduct(targetId: string) {
     let cancelled = false;
-    getProductById(id)
+    getProductById(targetId)
       .then((product) => {
         if (cancelled) return;
-        setLoadedId(id);
+        setLoadedId(targetId);
         if (!product) {
           setStatus("not-found");
           return;
@@ -110,13 +132,26 @@ export function AdminProductFormPage() {
       })
       .catch(() => {
         if (cancelled) return;
-        setLoadedId(id);
+        setLoadedId(targetId);
+        setStatus("error");
         setGlobalError(friendlyError(null));
       });
     return () => {
       cancelled = true;
     };
+  }
+
+  useEffect(() => {
+    if (!id) return;
+    return fetchProduct(id);
   }, [id]);
+
+  function handleRetry() {
+    if (!id) return;
+    setLoadedId(null);
+    setGlobalError(null);
+    fetchProduct(id);
+  }
 
   const isLoadingProduct = isEditing && loadedId !== id;
 
@@ -127,6 +162,40 @@ export function AdminProductFormPage() {
   function handleBlur(key: keyof FormFields) {
     const fieldErrors = validate(fields);
     setErrors((current) => ({ ...current, [key]: fieldErrors[key] }));
+  }
+
+  async function handleImageChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Permite volver a elegir el mismo archivo si la subida anterior falló.
+    e.target.value = "";
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setImageStatus("error");
+      setImageUploadError("Formato no soportado. Usa PNG, JPG, WEBP o GIF.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setImageStatus("error");
+      setImageUploadError("La imagen no puede pesar más de 5MB.");
+      return;
+    }
+
+    setImageStatus("uploading");
+    setImageUploadError(null);
+    try {
+      const publicUrl = await uploadProductImage(file);
+      setField("imageUrl", publicUrl);
+      setErrors((current) => ({ ...current, imageUrl: undefined }));
+      setImageStatus("idle");
+    } catch (err) {
+      setImageStatus("error");
+      setImageUploadError(
+        err instanceof Error
+          ? err.message
+          : "No pudimos subir la imagen. Intenta de nuevo.",
+      );
+    }
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -164,6 +233,20 @@ export function AdminProductFormPage() {
     return <p className="text-gray-500">Cargando producto…</p>;
   }
 
+  if (status === "error") {
+    return (
+      <div className="flex flex-col gap-4">
+        <Link to="/admin" className="text-sm underline">
+          ← Volver al listado
+        </Link>
+        <ErrorState
+          message={globalError ?? "No pudimos cargar el producto."}
+          onRetry={handleRetry}
+        />
+      </div>
+    );
+  }
+
   if (status === "not-found") {
     return (
       <div>
@@ -175,7 +258,7 @@ export function AdminProductFormPage() {
     );
   }
 
-  const isSubmitting = status === "submitting";
+  const isSubmitting = status === "submitting" || imageStatus === "uploading";
 
   return (
     <div className="max-w-lg">
@@ -271,21 +354,23 @@ export function AdminProductFormPage() {
         </div>
 
         <div>
-          <label className="text-sm font-medium" htmlFor="imageUrl">
-            URL de la imagen
+          <label className="text-sm font-medium" htmlFor="image">
+            Imagen del producto
           </label>
           <input
-            id="imageUrl"
-            value={fields.imageUrl}
+            id="image"
+            type="file"
+            accept={ALLOWED_IMAGE_TYPES.join(",")}
             disabled={isSubmitting}
-            placeholder="https://..."
-            onChange={(e) => setField("imageUrl", e.target.value)}
-            onBlur={() => handleBlur("imageUrl")}
+            onChange={handleImageChange}
             className="w-full border rounded p-2 mt-1"
           />
-          {/* TODO: reemplazar por upload a S3 con presigned URL (Vercel
-              Function) cuando lleguemos a esa parte de la consigna. Por
-              ahora el admin pega la URL de la imagen a mano. */}
+          {imageStatus === "uploading" && (
+            <p className="text-gray-500 text-sm mt-1">Subiendo imagen…</p>
+          )}
+          {imageStatus === "error" && imageUploadError && (
+            <p className="text-red-600 text-sm mt-1">{imageUploadError}</p>
+          )}
           {errors.imageUrl && (
             <p className="text-red-600 text-sm mt-1">{errors.imageUrl}</p>
           )}
