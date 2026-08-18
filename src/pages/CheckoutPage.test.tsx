@@ -36,6 +36,10 @@ vi.mock("../services/authService", () => ({
   signUp: vi.fn(),
   signInWithGoogle: vi.fn(),
   signOut: vi.fn(),
+  // onAuthStateChanged llama a ensureUserProfile, no a fetchUserProfile
+  // (ver el fix en AuthContext) -- este mock es el que realmente se usa
+  // ahora para autenticar en estos tests.
+  ensureUserProfile: vi.fn(),
   fetchUserProfile: vi.fn(),
 }));
 
@@ -53,7 +57,7 @@ function authenticateAsCustomer() {
     callback({ uid: userCustomerFixture.uid });
     return () => {};
   });
-  vi.mocked(authService.fetchUserProfile).mockResolvedValue(userCustomerFixture);
+  vi.mocked(authService.ensureUserProfile).mockResolvedValue(userCustomerFixture);
 }
 
 function seedCart() {

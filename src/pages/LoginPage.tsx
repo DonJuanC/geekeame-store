@@ -1,11 +1,11 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import { StoreHeader } from "../components/layout/StoreHeader";
 
 export function LoginPage() {
-  const { signIn, signInWithGoogle } = useAuth();
+  const { status, signIn, signInWithGoogle } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const navigate = useNavigate();
@@ -13,6 +13,20 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // El caso que faltaba: signInWithGoogle (redirect) navega la página
+  // ENTERA afuera y vuelve -- vuelve al mismo /login del que salió, no a
+  // "/". El navigate("/") de handleGoogle de abajo nunca llega a correr
+  // (el componente ya se desmontó cuando el browser te mandó a Google), así
+  // que sin esto el estado quedaba "authenticated" pero la pantalla seguía
+  // mostrando el form de login -- exactamente el bug reportado ("vuelve al
+  // login"). Este efecto es lo que efectivamente saca de acá una vez que
+  // AuthContext resuelve el redirect al montar.
+  useEffect(() => {
+    if (status === "authenticated") {
+      navigate("/");
+    }
+  }, [status, navigate]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -33,8 +47,15 @@ export function LoginPage() {
     try {
       await signInWithGoogle();
       navigate("/");
-    } catch {
-      setError("No pudimos iniciar sesión con Google.");
+    } catch (err) {
+      // Antes este catch descartaba el error real, así que en pantalla y en
+      // consola no quedaba ningún rastro de por qué fallaba (ej.
+      // auth/popup-blocked, auth/unauthorized-domain, auth/cancelled-popup-request).
+      // Ahora se loguea completo y se muestra el code/message en el mensaje
+      // de error para poder diagnosticar sin adivinar.
+      console.error("[signInWithGoogle]", err);
+      const detail = err instanceof Error ? err.message : String(err);
+      setError(`No pudimos iniciar sesión con Google. (${detail})`);
     }
   }
 

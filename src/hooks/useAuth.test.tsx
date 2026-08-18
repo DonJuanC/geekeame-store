@@ -26,8 +26,18 @@ vi.mock("../services/firebase", () => ({
 vi.mock("../services/authService", () => ({
   signIn: vi.fn(),
   signUp: vi.fn(),
+  // signInWithGoogle ahora usa signInWithPopup (ver authService) y
+  // devuelve el UserProfile directo -- ya no depende de un
+  // completeGoogleRedirect al montar, así que no hace falta mockear eso
+  // acá.
   signInWithGoogle: vi.fn(),
   signOut: vi.fn(),
+  // onAuthStateChanged llama a ensureUserProfile (crea el perfil si no
+  // existe) en vez de a fetchUserProfile (solo lectura) -- ver el fix en
+  // AuthContext: depender de un fetch de solo lectura dejaba a cualquier
+  // usuario autenticado en Firebase pero sin doc en Firestore varado en
+  // "unauthenticated" para siempre.
+  ensureUserProfile: vi.fn(),
   fetchUserProfile: vi.fn(),
 }));
 
@@ -56,13 +66,13 @@ describe("useAuth", () => {
     expect(result.current.user).toBeNull();
   });
 
-  it("pasa a 'authenticated' con el perfil cuando Firebase reporta un usuario con perfil en Firestore", async () => {
+  it("pasa a 'authenticated' con el perfil cuando Firebase reporta un usuario con perfil ya existente en Firestore", async () => {
     vi.mocked(onAuthStateChanged).mockImplementation((_auth, callback) => {
       // @ts-expect-error firma simplificada del callback para el mock
       callback({ uid: userCustomerFixture.uid });
       return () => {};
     });
-    vi.mocked(authService.fetchUserProfile).mockResolvedValue(userCustomerFixture);
+    vi.mocked(authService.ensureUserProfile).mockResolvedValue(userCustomerFixture);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -70,17 +80,27 @@ describe("useAuth", () => {
     expect(result.current.user).toEqual(userCustomerFixture);
   });
 
-  it("edge case: usuario autenticado en Firebase pero sin perfil en Firestore queda 'unauthenticated'", async () => {
+  it("usuario autenticado en Firebase pero SIN perfil en Firestore: se crea el perfil y queda 'authenticated' (no se queda varado)", async () => {
+    // Este es el caso concreto del bug reportado: un login con Google
+    // recién vuelto del redirect, donde Firebase ya considera la sesión
+    // válida pero todavía no existe el doc en "users". Antes esto se
+    // resolvía con un fetchUserProfile de solo lectura -> null -> la app
+    // quedaba en "unauthenticated" para siempre por más que
+    // onAuthStateChanged siguiera reportando un firebaseUser válido.
     vi.mocked(onAuthStateChanged).mockImplementation((_auth, callback) => {
       // @ts-expect-error firma simplificada del callback para el mock
       callback({ uid: userCustomerFixture.uid });
       return () => {};
     });
-    vi.mocked(authService.fetchUserProfile).mockResolvedValue(null);
+    vi.mocked(authService.ensureUserProfile).mockResolvedValue(userCustomerFixture);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
-    await waitFor(() => expect(result.current.status).toBe("unauthenticated"));
+    await waitFor(() => expect(result.current.status).toBe("authenticated"));
+    expect(authService.ensureUserProfile).toHaveBeenCalledWith(
+      userCustomerFixture.uid,
+      "",
+    );
   });
 
   it("signIn actualiza el estado a authenticated con el usuario devuelto por el servicio", async () => {
@@ -108,7 +128,7 @@ describe("useAuth", () => {
       callback({ uid: userCustomerFixture.uid });
       return () => {};
     });
-    vi.mocked(authService.fetchUserProfile).mockResolvedValue(userCustomerFixture);
+    vi.mocked(authService.ensureUserProfile).mockResolvedValue(userCustomerFixture);
     vi.mocked(authService.signOut).mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
