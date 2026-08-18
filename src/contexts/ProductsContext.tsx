@@ -72,6 +72,32 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
     };
   }, [categoryId, debouncedSearch]);
 
+  // showLanding: si Home debe mostrar el hero/tiles/destacados o solo el
+  // catálogo. Antes eso se deducía de categoryId === null && searchInput
+  // === "", pero el pill "Todas" del catálogo también deja categoryId en
+  // null -- entonces "Todas" (que debería quedarse en el catálogo)
+  // disparaba el hero de nuevo por accidente. Ahora es un flag aparte:
+  // cualquier interacción con el filtro/búsqueda lo apaga (aunque el
+  // resultado sea "sin filtro"), y solo goToLanding() (logo, ver
+  // StoreHeader) lo vuelve a prender.
+  const [showLanding, setShowLanding] = useState(true);
+
+  function updateCategoryId(id: string | null) {
+    setShowLanding(false);
+    setCategoryId(id);
+  }
+
+  function updateSearchInput(term: string) {
+    setShowLanding(false);
+    setSearchInput(term);
+  }
+
+  function goToLanding() {
+    setShowLanding(true);
+    setCategoryId(null);
+    setSearchInput("");
+  }
+
   const isLoading =
     loadedParams === null ||
     loadedParams.categoryId !== categoryId ||
@@ -107,8 +133,10 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
         error,
         categoryId,
         searchInput,
-        setCategoryId,
-        setSearchInput,
+        setCategoryId: updateCategoryId,
+        setSearchInput: updateSearchInput,
+        showLanding,
+        goToLanding,
         hasMore: cursor !== null,
         isLoadingMore,
         loadMoreError,

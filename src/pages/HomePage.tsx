@@ -2,10 +2,19 @@ import { useProducts } from "../hooks/useProducts";
 import { useTheme } from "../hooks/useTheme";
 import { ProductCard } from "../components/product/ProductCard";
 import { StoreHeader } from "../components/layout/StoreHeader";
+import { HeroSection } from "../components/home/HeroSection";
+import { CategoryTiles } from "../components/home/CategoryTiles";
 import { LoadingState } from "../components/states/LoadingState";
 import { EmptyState } from "../components/states/EmptyState";
 import { ErrorState } from "../components/states/ErrorState";
 import { PRODUCT_CATEGORIES } from "../constants/categories";
+
+// Cantidad de productos en "Destacados": simple slice de los primeros N de
+// products (que en la vista por defecto ya vienen ordenados por
+// createdAt desc -- ver listProducts), no un flag de "featured" en
+// Firestore. No hay campo para eso todavía; esto es "recién llegados"
+// presentado como vitrina, no una curación manual.
+const FEATURED_COUNT = 6;
 
 export function HomePage() {
   const {
@@ -16,6 +25,7 @@ export function HomePage() {
     searchInput,
     setCategoryId,
     setSearchInput,
+    showLanding,
     hasMore,
     isLoadingMore,
     loadMoreError,
@@ -24,12 +34,60 @@ export function HomePage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
+  // Vista "landing": el hero/tiles/destacados son bienvenida, no catálogo.
+  // showLanding (ProductsContext) es un flag aparte de categoryId/
+  // searchInput -- "Todas" también deja categoryId en null pero debe
+  // quedarse en el catálogo, no traer de vuelta el hero (ver la nota en
+  // ProductsContext.tsx). Se ocultan en vez de convivir con el resto para
+  // no repetir productos dos veces en pantalla sin motivo.
+  const isDefaultView = showLanding;
+  const featured = products.slice(0, FEATURED_COUNT);
+
   return (
     <div className={`min-h-screen ${isDark ? "bg-[#0f0e17]" : "bg-white"}`}>
       <StoreHeader />
 
+      {isDefaultView && <HeroSection />}
+
       <div className="p-4 max-w-5xl mx-auto">
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        {isDefaultView && (
+          <div className="mb-8">
+            <CategoryTiles onSelect={setCategoryId} dark={isDark} />
+          </div>
+        )}
+
+        {isDefaultView && status === "idle" && featured.length > 0 && (
+          <div className="mb-10">
+            <h2
+              className={`font-['Fredoka'] text-xl font-semibold mb-3 ${
+                isDark ? "text-[#f5f3ff]" : "text-[#1a1625]"
+              }`}
+            >
+              Destacados
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {featured.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {isDefaultView && status === "idle" && featured.length > 0 && (
+          <div className="flex items-center gap-3 mb-6" aria-hidden="true">
+            <span className={`h-px flex-1 ${isDark ? "bg-[#2e2a45]" : "bg-[#ede9fe]"}`} />
+            <span
+              className={`text-xs font-medium uppercase tracking-wide ${
+                isDark ? "text-[#6b6485]" : "text-[#9ca3af]"
+              }`}
+            >
+              Catálogo completo
+            </span>
+            <span className={`h-px flex-1 ${isDark ? "bg-[#2e2a45]" : "bg-[#ede9fe]"}`} />
+          </div>
+        )}
+
+        <div id="catalogo" className="flex flex-col sm:flex-row gap-3 mb-6 scroll-mt-20">
           <input
             type="search"
             placeholder="Buscar por nombre..."

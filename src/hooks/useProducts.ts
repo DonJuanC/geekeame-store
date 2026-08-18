@@ -11,6 +11,11 @@ export interface ProductsContextValue {
   searchInput: string;
   setCategoryId: (id: string | null) => void;
   setSearchInput: (term: string) => void;
+  // showLanding: si Home debe mostrar hero/tiles/destacados (true) o solo
+  // el catálogo (false). Separado de categoryId/searchInput porque "Todas"
+  // también deja categoryId en null -- ver la nota en ProductsContext.tsx.
+  showLanding: boolean;
+  goToLanding: () => void;
   // Paginación: hasMore indica si listProducts devolvió un cursor válido
   // para la página actual (categoryId + búsqueda). isLoadingMore es un
   // loading separado del "status" principal para no tapar la grilla ya

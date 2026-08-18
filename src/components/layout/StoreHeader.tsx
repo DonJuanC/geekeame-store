@@ -1,7 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../hooks/useCart";
 import { useTheme } from "../../hooks/useTheme";
+import { useProducts } from "../../hooks/useProducts";
 
 // Header de marca para las páginas del cliente (por ahora HomePage; se va
 // sumando al resto). Antes cada página armaba su propia navegación suelta
@@ -23,8 +24,29 @@ export function StoreHeader() {
   const { user, signOut } = useAuth();
   const { items } = useCart();
   const { theme, toggleTheme } = useTheme();
+  const { goToLanding } = useProducts();
+  const location = useLocation();
   const isDark = theme === "dark";
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
+
+  // categoryId/searchInput/showLanding viven en ProductsContext, arriba de
+  // <App/> en main.tsx -- sobreviven la navegación (no son estado local de
+  // HomePage). El logo es la única puerta de vuelta al "home completo"
+  // (hero/tiles/destacados, ver showLanding): goToLanding() limpia filtro
+  // y búsqueda Y prende showLanding -- distinto del pill "Todas" del
+  // catálogo, que limpia el filtro pero se queda en el catálogo (ver
+  // ProductsContext.tsx). Sin esto, si venías filtrando por una categoría,
+  // "volver a home" cambiaba de ruta pero el filtro seguía activo, o si ya
+  // estabas en "/" el Link ni navegaba (misma ruta) -- en ambos casos el
+  // click en el logo parecía "no llevar a ningún lado". El scroll al top
+  // es aparte porque cuando ya se está en "/" el Link no dispara el
+  // efecto de ScrollToTop de App.tsx (la ruta no cambia).
+  function handleLogoClick() {
+    goToLanding();
+    if (location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
 
   return (
     <header
@@ -37,7 +59,8 @@ export function StoreHeader() {
       <div className="max-w-5xl mx-auto p-4 flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/"
-          className={`font-['Fredoka'] text-2xl font-semibold ${
+          onClick={handleLogoClick}
+          className={`logo-hover-wiggle inline-block font-['Fredoka'] text-2xl font-semibold ${
             isDark ? "text-[#a78bfa]" : "text-[#6d28d9]"
           }`}
         >
