@@ -331,6 +331,7 @@ export function AdminProductFormPage() {
               id="price"
               type="number"
               min="0"
+              step="100"
               value={fields.price}
               disabled={isSubmitting}
               onChange={(e) => setField("price", e.target.value)}

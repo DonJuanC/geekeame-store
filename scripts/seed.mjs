@@ -92,6 +92,15 @@ function colorForTheme(theme) {
   return hslToHex(hashHue(theme), 65, 45);
 }
 
+// Redondeado a la centena: sin esto, min + ((i*733) % range) da números
+// como 8796 o 33796 -- exactos mirados de cerca, pero se leen como precio
+// de mayorista/lista de costos (mucha precisión "de más" para un producto
+// de retail) en vez de un precio de vitrina. Retail casi siempre redondea
+// a la centena o más.
+function roundPrice(value) {
+  return Math.round(value / 100) * 100;
+}
+
 const products = [];
 for (const categoryId of categoryIds) {
   const meta = categoryMeta[categoryId];
@@ -101,7 +110,7 @@ for (const categoryId of categoryIds) {
     products.push({
       name,
       categoryId,
-      price: min + ((i * 733) % (max - min)),
+      price: roundPrice(min + ((i * 733) % (max - min))),
       stock: 5 + ((i * 7) % 40),
       description: meta.desc,
       imageUrl: `https://placehold.co/400x400/${colorForTheme(theme)}/FFFFFF?text=${encodeURIComponent(name)}`,
