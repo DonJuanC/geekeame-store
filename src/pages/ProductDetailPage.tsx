@@ -5,6 +5,7 @@ import { LoadingState } from "../components/states/LoadingState";
 import { ErrorState } from "../components/states/ErrorState";
 import type { Product } from "../types/product";
 import { useCart } from "../hooks/useCart";
+import { ProductReviews } from "../components/product/ProductReviews";
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -80,6 +81,8 @@ export function ProductDetailPage() {
           Agregar al carrito
         </button>
       </p>
+
+      <ProductReviews productId={product.id} />
     </div>
   );
 }

@@ -1,0 +1,106 @@
+rules_version = '2';
+
+// Enforcement real de roles: la UI (RequireAdmin, RequireAuth) solo oculta
+// botones y rutas. Sin estas reglas, cualquier sesión autenticada podría
+// escribir en "products", "orders" o "reviews" directamente desde el SDK de
+// Firebase o la consola del navegador, sin pasar por la app.
+//
+// Cómo aplicarlas: Firebase Console → Firestore Database → Reglas → pegar
+// este archivo → Publicar. (O `firebase deploy --only firestore:rules` si
+// usás Firebase CLI.)
+//
+// Nota: este archivo refleja el estado publicado en la consola de Firebase
+// al momento de este commit -- las reglas se editan y publican desde ahí
+// (no hay firebase.json/CLI deploy configurado en este proyecto), así que
+// cualquier cambio hecho directo en la consola hay que traerlo también acá
+// para que el repo no quede desactualizado respecto a lo que corre en
+// producción.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Perfil de usuario: cada quien lee/crea el suyo (se crea una sola vez
+    // en el signup, ver authService.ts → ensureUserProfile). El rol se fija
+    // en "customer" al crear y no se puede cambiar en el update (compara
+    // contra resource.data.role): así ningún cliente puede auto-asignarse
+    // admin, ni al crear su perfil ni editándolo después.
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.role == 'customer';
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.role == resource.data.role;
+    }
+
+    // Catálogo: lectura pública (lo ve cualquiera, logueado o no).
+    // Alta y borrado: solo admin.
+    // Update: admin puede modificar cualquier campo; un usuario logueado
+    // (no admin) solo puede tocar "stock", y únicamente para bajarlo (nunca
+    // subirlo) -- es exactamente lo que hace la transacción de checkout
+    // (ordersService.ts) al descontar stock al confirmar una compra, y
+    // evita que ese mismo permiso se pueda usar para inflar el stock de un
+    // producto desde el cliente.
+    match /products/{productId} {
+      allow read: if true;
+
+      allow create, delete: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+
+      allow update: if (
+        request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      ) || (
+        request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock'])
+        && request.resource.data.stock < resource.data.stock
+      );
+    }
+
+    // Reviews: lectura pública (se muestran en el detalle del producto a
+    // cualquiera, logueado o no). Alta/edición: el propio usuario, con
+    // rating validado en el servidor (entero 1-5) y userId forzado a que
+    // coincida con el auth.uid -- así nadie puede publicar una review a
+    // nombre de otro ni mandar un rating fuera de rango. Borrado: el dueño
+    // de la review o un admin (moderación).
+    match /reviews/{reviewId} {
+      allow read: if true;
+
+      allow create, update: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
+
+      allow delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    // Órdenes: un usuario solo lee/crea las propias (userId == su uid), y
+    // toda orden nueva debe nacer en "pending" -- evita que alguien cree
+    // directo desde el cliente una orden ya marcada "completed", saltando
+    // el flujo real. Cambiar el estado (pending -> processing ->
+    // completed/cancelled) queda reservado a admin, y el update solo puede
+    // tocar "status"/"updatedAt": ni el admin puede reescribir items o
+    // total de una orden ya creada.
+    match /orders/{orderId} {
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+
+      allow update: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+
+      allow delete: if false;
+    }
+
+  }
+}

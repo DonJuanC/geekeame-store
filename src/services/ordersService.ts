@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -62,6 +63,16 @@ export async function createOrder(
   });
 
   return orderRef.id;
+}
+
+// Detalle de una orden puntual (OrderDetailPage). No filtra por userId acá:
+// firestore.rules ya exige resource.data.userId == auth.uid || isAdmin()
+// para leer un doc de "orders", así que un customer que intente abrir la
+// orden de otro recibe permission-denied desde el propio SDK -- no hace
+// falta duplicar esa validación en el cliente.
+export async function getOrderById(id: string): Promise<Order | null> {
+  const snap = await getDoc(doc(db, "orders", id));
+  return snap.exists() ? ({ id: snap.id, ...snap.data() } as Order) : null;
 }
 
 export async function listOrdersForUser(userId: string): Promise<Order[]> {

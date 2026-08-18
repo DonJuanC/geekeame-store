@@ -8,6 +8,7 @@ import { CartPage } from "./pages/CartPage";
 import { RequireAuth } from "./components/auth/RequireAuth";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { OrdersPage } from "./pages/OrdersPage";
+import { OrderDetailPage } from "./pages/OrderDetailPage";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import { AdminProductsPage } from "./pages/admin/AdminProductsPage";
 import { AdminProductFormPage } from "./pages/admin/AdminProductFormPage";
@@ -34,6 +35,14 @@ function App() {
         element={
           <RequireAuth>
             <OrdersPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/orders/:id"
+        element={
+          <RequireAuth>
+            <OrderDetailPage />
           </RequireAuth>
         }
       />

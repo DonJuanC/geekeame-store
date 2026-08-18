@@ -70,7 +70,11 @@ export function OrdersPage() {
       {!isLoading && status === "idle" && orders.length > 0 && (
         <div className="flex flex-col gap-3">
           {orders.map((order) => (
-            <div key={order.id} className="border rounded p-3">
+            <Link
+              key={order.id}
+              to={`/orders/${order.id}`}
+              className="border rounded p-3 hover:bg-gray-50 transition-colors"
+            >
               <div className="flex justify-between text-sm">
                 <span className="font-medium">
                   Orden {order.id.slice(0, 8)}
@@ -84,7 +88,7 @@ export function OrdersPage() {
                 {order.items.length} producto(s) - $
                 {order.total.toLocaleString("es-CO")}
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       )}
