@@ -7,6 +7,7 @@ import {
   summarizeReviews,
   upsertReview,
 } from "../../services/reviewsService";
+import { hasPurchasedProduct, listOrdersForUser } from "../../services/ordersService";
 import type { Review } from "../../types/review";
 import { StarRating } from "./StarRating";
 import { LoadingState } from "../states/LoadingState";
@@ -44,6 +45,28 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
     "idle" | "submitting" | "error"
   >("idle");
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Gate de "reseña solo si compraste": null mientras se resuelve (para no
+  // mostrar el form un instante y esconderlo después), true/false una vez
+  // que se sabe. Se resetea a null cuando cambia el usuario (logout/login
+  // con otra cuenta) para no arrastrar el resultado de otra persona.
+  const [canReview, setCanReview] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setCanReview(null);
+      return;
+    }
+    let cancelled = false;
+    setCanReview(null);
+    listOrdersForUser(user.uid).then((orders) => {
+      if (cancelled) return;
+      setCanReview(hasPurchasedProduct(orders, productId));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, productId]);
 
   const fetchReviews = useCallback(() => {
     setStatus("loading");
@@ -146,7 +169,25 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
             ))}
           </div>
 
-          {user ? (
+          {!user && (
+            <p className={`text-sm ${mutedText}`}>
+              <Link
+                to="/login"
+                className={isDark ? "text-[#c4b5fd] hover:text-[#a78bfa]" : "text-[#6d28d9] hover:text-[#4c1d95]"}
+              >
+                Inicia sesión
+              </Link>{" "}
+              para dejar tu reseña.
+            </p>
+          )}
+
+          {user && canReview === false && (
+            <p className={`text-sm ${mutedText}`}>
+              Solo puedes reseñar productos que compraste.
+            </p>
+          )}
+
+          {user && canReview && (
             <form
               onSubmit={handleSubmit}
               className={`rounded-xl border p-3 flex flex-col gap-3 ${
@@ -183,16 +224,6 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                     : "Publicar reseña"}
               </button>
             </form>
-          ) : (
-            <p className={`text-sm ${mutedText}`}>
-              <Link
-                to="/login"
-                className={isDark ? "text-[#c4b5fd] hover:text-[#a78bfa]" : "text-[#6d28d9] hover:text-[#4c1d95]"}
-              >
-                Inicia sesión
-              </Link>{" "}
-              para dejar tu reseña.
-            </p>
           )}
         </>
       )}

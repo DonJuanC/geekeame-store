@@ -107,3 +107,20 @@ export async function updateOrderStatus(
   const ref = doc(db, "orders", id);
   await updateDoc(ref, { status, updatedAt: Date.now() });
 }
+
+// Gate para reseñas (ProductReviews): solo puede reseñar un producto quien
+// ya lo compró. "Comprar" acá es cualquier orden que lo incluya salvo
+// "cancelled" -- no se exige "completed" porque eso implicaría esperar a
+// que el admin marque la entrega para poder opinar, y el negocio no pide
+// eso, solo que la compra haya sido real (no cancelada/reembolsada). Toma
+// Order[] en vez de pedir userId+productId y hacer el fetch acá adentro
+// para poder reusar el mismo listado ya cargado por OrdersPage/
+// ProductReviews sin duplicar la llamada a Firestore, y para que sea
+// trivial de testear como función pura.
+export function hasPurchasedProduct(orders: Order[], productId: string): boolean {
+  return orders.some(
+    (order) =>
+      order.status !== "cancelled" &&
+      order.items.some((item) => item.productId === productId),
+  );
+}
