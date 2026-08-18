@@ -95,6 +95,15 @@ export function StoreHeader() {
             </Link>
           )}
 
+          {user?.role === "admin" && (
+            <Link
+              to="/admin"
+              className="rounded-full px-3 py-1 font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors"
+            >
+              Panel admin
+            </Link>
+          )}
+
           {user ? (
             <div className="flex items-center gap-2">
               <span
