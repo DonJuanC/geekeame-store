@@ -60,13 +60,26 @@ export function StoreHeader() {
 
           <Link
             to="/cart"
-            className={`rounded-full border px-3 py-1 transition-colors ${
+            aria-label={`Carrito${cartCount > 0 ? ` con ${cartCount} producto${cartCount === 1 ? "" : "s"}` : ""}`}
+            className={`relative rounded-full pl-3 pr-3.5 py-1.5 flex items-center gap-1.5 font-medium transition-all hover:scale-105 active:scale-95 ${
               isDark
-                ? "border-[#3f3a5c] text-[#c4b5fd] hover:bg-[#211d34]"
-                : "border-[#ddd6fe] hover:bg-[#f5f3ff]"
+                ? "bg-[#2e2a45] text-[#f5f3ff] hover:bg-[#3f3a5c]"
+                : "bg-[#f5f3ff] text-[#6d28d9] hover:bg-[#ede9fe]"
             }`}
           >
-            Carrito{cartCount > 0 ? ` (${cartCount})` : ""}
+            <span className="text-base" aria-hidden="true">
+              🛒
+            </span>
+            <span className="hidden sm:inline">Carrito</span>
+            {cartCount > 0 && (
+              <span
+                key={cartCount}
+                aria-hidden="true"
+                className="cart-badge-bump absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#db2777] text-white text-[10px] font-bold px-1"
+              >
+                {cartCount}
+              </span>
+            )}
           </Link>
 
           {user && (

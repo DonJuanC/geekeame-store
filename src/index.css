@@ -26,3 +26,44 @@
 body {
   color: #1a1625;
 }
+
+/* Los <button> nativos no heredan cursor:pointer del navegador (a
+   diferencia de los <a>/<Link>) -- por eso ningún botón del sitio
+   cambiaba de flecha a mano, sin importar sus clases de Tailwind. Regla
+   global en vez de agregar cursor-pointer botón por botón en cada
+   componente: es CSS núcleo (selector de elemento + pseudo-clases), no
+   una directiva custom de Tailwind, así que no corre riesgo del bug de
+   @theme/@custom-variant. El active:scale dá el "feedback de que se
+   ejecutó la acción" que faltaba -- un click sin hover visible (mobile,
+   o mouse quieto) no mostraba ningún cambio hasta que la data volvía. */
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+button:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+/* Badge del contador del carrito (StoreHeader): el key={cartCount} en el
+   span hace que React lo desmonte/remonte cada vez que cambia el número,
+   así esta animación se repite en cada "agregar al carrito" -- no hace
+   falta un useEffect a mano para disparar la animación de nuevo. */
+@keyframes cart-bump {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cart-badge-bump {
+  animation: cart-bump 0.3s ease;
+}
