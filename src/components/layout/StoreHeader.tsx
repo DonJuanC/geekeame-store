@@ -84,6 +84,19 @@ export function StoreHeader() {
 
           {user && (
             <Link
+              to="/favorites"
+              className={`rounded-full border px-3 py-1 transition-colors ${
+                isDark
+                  ? "border-[#3f3a5c] text-[#c4b5fd] hover:bg-[#211d34]"
+                  : "border-[#ddd6fe] hover:bg-[#f5f3ff]"
+              }`}
+            >
+              Favoritos
+            </Link>
+          )}
+
+          {user && (
+            <Link
               to="/orders"
               className={`rounded-full border px-3 py-1 transition-colors ${
                 isDark

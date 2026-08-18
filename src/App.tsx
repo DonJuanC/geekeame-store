@@ -9,6 +9,7 @@ import { RequireAuth } from "./components/auth/RequireAuth";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { OrderDetailPage } from "./pages/OrderDetailPage";
+import { FavoritesPage } from "./pages/FavoritesPage";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import { AdminProductsPage } from "./pages/admin/AdminProductsPage";
 import { AdminProductFormPage } from "./pages/admin/AdminProductFormPage";
@@ -44,6 +45,14 @@ function App() {
         element={
           <RequireAuth>
             <OrderDetailPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/favorites"
+        element={
+          <RequireAuth>
+            <FavoritesPage />
           </RequireAuth>
         }
       />

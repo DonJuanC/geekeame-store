@@ -3,6 +3,7 @@ import type { Product } from "../../types/product";
 import { useCart } from "../../hooks/useCart";
 import { useTheme } from "../../hooks/useTheme";
 import { ProductImage } from "./ProductImage";
+import { FavoriteButton } from "./FavoriteButton";
 import { categoryLabel, categoryTagColors, themeName } from "../../utils/productDisplay";
 
 export function ProductCard({ product }: { product: Product }) {
@@ -23,12 +24,13 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <div
-      className={`border rounded-xl overflow-hidden transition-all hover:-translate-y-0.5 ${
+      className={`relative border rounded-xl overflow-hidden transition-all hover:-translate-y-0.5 ${
         isDark
           ? "bg-[#1c1a29] border-[#2e2a45] hover:border-[#7c3aed]"
           : "bg-white border-[#ede9fe] hover:shadow-lg"
       }`}
     >
+      <FavoriteButton productId={product.id} className="absolute top-2 right-2 z-10" />
       <Link to={`/products/${product.id}`}>
         <ProductImage
           product={product}

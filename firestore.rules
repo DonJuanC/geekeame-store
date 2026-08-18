@@ -102,5 +102,24 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Listas de favoritos: cada lista es privada de su dueño -- ni
+    // lectura pública (a diferencia de reviews/products) ni acceso de
+    // admin, no hay razón de negocio para que nadie más las vea. userId
+    // forzado a que coincida con el auth.uid al crear, e inmutable en el
+    // update (misma lógica que el "role" en users): así nadie puede crear
+    // una lista a nombre de otro ni transferir una lista existente
+    // cambiándole el dueño.
+    match /favoriteLists/{listId} {
+      allow read, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId;
+    }
+
   }
 }

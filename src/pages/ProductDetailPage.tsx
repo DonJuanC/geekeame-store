@@ -9,6 +9,7 @@ import type { Product } from "../types/product";
 import { useCart } from "../hooks/useCart";
 import { ProductReviews } from "../components/product/ProductReviews";
 import { ProductImage } from "../components/product/ProductImage";
+import { FavoriteButton } from "../components/product/FavoriteButton";
 import { categoryLabel, categoryTagColors, themeName } from "../utils/productDisplay";
 
 export function ProductDetailPage() {
@@ -92,12 +93,15 @@ export function ProductDetailPage() {
         >
           ← Volver al catálogo
         </Link>
-        <ProductImage
-          product={product}
-          className="w-full aspect-square object-cover rounded-lg my-4"
-          emojiClassName="text-4xl"
-          dark={isDark}
-        />
+        <div className="relative">
+          <ProductImage
+            product={product}
+            className="w-full aspect-square object-cover rounded-lg my-4"
+            emojiClassName="text-4xl"
+            dark={isDark}
+          />
+          <FavoriteButton productId={product.id} className="absolute top-6 right-2 z-10" />
+        </div>
         <span
           className="inline-block text-xs font-medium uppercase tracking-wide rounded-full px-2 py-0.5 mt-1"
           style={{
