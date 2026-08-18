@@ -114,26 +114,34 @@ export function StoreHeader() {
           {user && (
             <Link
               to="/favorites"
-              className={`rounded-full border px-3 py-1 transition-colors ${
+              aria-label="Favoritos"
+              className={`rounded-full border pl-3 pr-3.5 py-1.5 flex items-center gap-1.5 transition-colors ${
                 isDark
                   ? "border-[#3f3a5c] text-[#c4b5fd] hover:bg-[#211d34]"
                   : "border-[#ddd6fe] hover:bg-[#f5f3ff]"
               }`}
             >
-              Favoritos
+              <span className="text-base" aria-hidden="true">
+                ❤️
+              </span>
+              <span className="hidden sm:inline">Favoritos</span>
             </Link>
           )}
 
           {user && (
             <Link
               to="/orders"
-              className={`rounded-full border px-3 py-1 transition-colors ${
+              aria-label="Mis pedidos"
+              className={`rounded-full border pl-3 pr-3.5 py-1.5 flex items-center gap-1.5 transition-colors ${
                 isDark
                   ? "border-[#3f3a5c] text-[#c4b5fd] hover:bg-[#211d34]"
                   : "border-[#ddd6fe] hover:bg-[#f5f3ff]"
               }`}
             >
-              Mis pedidos
+              <span className="text-base" aria-hidden="true">
+                📦
+              </span>
+              <span className="hidden sm:inline">Mis pedidos</span>
             </Link>
           )}
 
@@ -157,13 +165,17 @@ export function StoreHeader() {
               </span>
               <button
                 onClick={() => signOut()}
-                className={`rounded-full border px-3 py-1 transition-colors ${
+                aria-label="Salir"
+                className={`rounded-full border pl-3 pr-3.5 py-1.5 flex items-center gap-1.5 transition-colors ${
                   isDark
                     ? "border-[#3f3a5c] text-[#c4b5fd] hover:bg-[#211d34]"
                     : "border-gray-200 hover:bg-gray-50"
                 }`}
               >
-                Salir
+                <span className="text-base" aria-hidden="true">
+                  🚪
+                </span>
+                <span className="hidden sm:inline">Salir</span>
               </button>
             </div>
           ) : (
