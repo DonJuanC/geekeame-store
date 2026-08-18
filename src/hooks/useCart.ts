@@ -1,6 +1,17 @@
-import { useContext } from "react";
-import { CartContext } from "../contexts/CartContext";
-import type { CartItem } from "../types/cart";
+import { createContext, useContext, type Dispatch } from "react";
+import type { CartState, CartAction, CartItem } from "../types/cart";
+
+export interface CartContextValue {
+  items: CartState["items"];
+  total: number;
+  dispatch: Dispatch<CartAction>;
+}
+
+// Igual que AuthContext: el Context vive en el .ts del hook, no en el .tsx
+// del provider, para no violar react-refresh/only-export-components.
+export const CartContext = createContext<CartContextValue | undefined>(
+  undefined,
+);
 
 export function useCart() {
   const ctx = useContext(CartContext);

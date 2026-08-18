@@ -1,12 +1,7 @@
-import {
-  createContext,
-  useEffect,
-  useReducer,
-  type Dispatch,
-  type ReactNode,
-} from "react";
+import { useEffect, useReducer, type ReactNode } from "react";
 import { cartReducer, initialCartState } from "./cartReducer";
-import type { CartState, CartAction } from "../types/cart";
+import type { CartState } from "../types/cart";
+import { CartContext } from "../hooks/useCart";
 
 const STORAGE_KEY = "geekeame-cart";
 
@@ -18,16 +13,6 @@ function loadInitialState(): CartState {
     return initialCartState;
   }
 }
-
-interface CartContextValue {
-  items: CartState["items"];
-  total: number;
-  dispatch: Dispatch<CartAction>;
-}
-
-export const CartContext = createContext<CartContextValue | undefined>(
-  undefined,
-);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(

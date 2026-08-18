@@ -9,16 +9,24 @@ import { useCart } from "../hooks/useCart";
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
-  const [status, setStatus] = useState<
-    "loading" | "idle" | "error" | "not-found"
-  >("loading");
+  const [status, setStatus] = useState<"idle" | "error" | "not-found">(
+    "idle",
+  );
+  // Id para el que "product"/"status" ya son válidos. Mientras no coincida
+  // con el id actual de la ruta seguimos "cargando" -- se deriva más abajo
+  // en vez de resetear con un setStatus("loading") síncrono al arrancar el
+  // efecto (react-hooks/set-state-in-effect). Mismo patrón que
+  // AdminProductFormPage.
+  const [loadedId, setLoadedId] = useState<string | null>(null);
   const { addItem } = useCart();
 
   useEffect(() => {
     if (!id) return;
-    setStatus("loading");
+    let cancelled = false;
     getProductById(id)
       .then((p) => {
+        if (cancelled) return;
+        setLoadedId(id);
         if (!p) {
           setStatus("not-found");
           return;
@@ -26,11 +34,19 @@ export function ProductDetailPage() {
         setProduct(p);
         setStatus("idle");
       })
-      .catch(() => setStatus("error"));
+      .catch(() => {
+        if (cancelled) return;
+        setLoadedId(id);
+        setStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
-  if (status === "loading")
-    return <LoadingState label="Cargando producto..." />;
+  const isLoading = Boolean(id) && loadedId !== id;
+
+  if (isLoading) return <LoadingState label="Cargando producto..." />;
   if (status === "error")
     return <ErrorState message="No pudimos cargar este producto." />;
   if (status === "not-found" || !product)

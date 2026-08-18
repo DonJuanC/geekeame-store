@@ -19,26 +19,33 @@ export function OrdersPage() {
   const [searchParams] = useSearchParams();
   const confirmedId = searchParams.get("confirmed");
   const [orders, setOrders] = useState<Order[]>([]);
-  const [status, setStatus] = useState<"loading" | "idle" | "error">("loading");
+  const [status, setStatus] = useState<"idle" | "error">("idle");
+  // Uid para el que "orders"/"status" ya son válidos. Mismo patrón que
+  // ProductDetailPage/AdminProductFormPage para no resetear "loading" de
+  // forma síncrona al arrancar el efecto (react-hooks/set-state-in-effect).
+  const [loadedUid, setLoadedUid] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    setStatus("loading");
     listOrdersForUser(user.uid)
       .then((result) => {
         if (cancelled) return;
         setOrders(result);
         setStatus("idle");
+        setLoadedUid(user.uid);
       })
       .catch(() => {
         if (cancelled) return;
         setStatus("error");
+        setLoadedUid(user.uid);
       });
     return () => {
       cancelled = true;
     };
   }, [user]);
+
+  const isLoading = Boolean(user) && loadedUid !== user?.uid;
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
@@ -53,14 +60,14 @@ export function OrdersPage() {
         </p>
       )}
 
-      {status === "loading" && <LoadingState label="Cargando pedidos..." />}
-      {status === "error" && (
+      {isLoading && <LoadingState label="Cargando pedidos..." />}
+      {!isLoading && status === "error" && (
         <ErrorState message="No pudimos cargar tus pedidos." />
       )}
-      {status === "idle" && orders.length === 0 && (
+      {!isLoading && status === "idle" && orders.length === 0 && (
         <EmptyState message="Todavía no tienes pedidos." />
       )}
-      {status === "idle" && orders.length > 0 && (
+      {!isLoading && status === "idle" && orders.length > 0 && (
         <div className="flex flex-col gap-3">
           {orders.map((order) => (
             <div key={order.id} className="border rounded p-3">
