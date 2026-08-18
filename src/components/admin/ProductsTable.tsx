@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { Product } from "../../types/product";
+import { ProductImage } from "../product/ProductImage";
 
 interface ProductRowProps {
   product: Product;
@@ -11,10 +12,10 @@ function ProductRow({ product, isDeleting, onDelete }: ProductRowProps) {
   return (
     <tr className="border-b last:border-b-0">
       <td className="p-2">
-        <img
-          src={product.imageUrl}
-          alt={product.name}
+        <ProductImage
+          product={product}
           className="w-12 h-12 object-cover rounded"
+          emojiClassName="text-base"
         />
       </td>
       <td className="p-2 text-sm font-medium">{product.name}</td>

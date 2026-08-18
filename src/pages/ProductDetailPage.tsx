@@ -6,6 +6,8 @@ import { ErrorState } from "../components/states/ErrorState";
 import type { Product } from "../types/product";
 import { useCart } from "../hooks/useCart";
 import { ProductReviews } from "../components/product/ProductReviews";
+import { ProductImage } from "../components/product/ProductImage";
+import { categoryLabel, categoryTagColors, themeName } from "../utils/productDisplay";
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -58,12 +60,21 @@ export function ProductDetailPage() {
       <Link to="/" className="text-sm underline">
         ← Volver al catálogo
       </Link>
-      <img
-        src={product.imageUrl}
-        alt={product.name}
+      <ProductImage
+        product={product}
         className="w-full aspect-square object-cover rounded-lg my-4"
+        emojiClassName="text-4xl"
       />
-      <h1 className="text-xl font-bold">{product.name}</h1>
+      <span
+        className="inline-block text-xs font-medium uppercase tracking-wide rounded-full px-2 py-0.5 mt-1"
+        style={{
+          backgroundColor: categoryTagColors(product.categoryId).bg,
+          color: categoryTagColors(product.categoryId).text,
+        }}
+      >
+        {categoryLabel(product.categoryId)}
+      </span>
+      <h1 className="text-xl font-bold mt-1">{themeName(product)}</h1>
       <p className="text-gray-600 my-2">{product.description}</p>
       <p className="text-lg font-medium">
         ${product.price.toLocaleString("es-CO")}
