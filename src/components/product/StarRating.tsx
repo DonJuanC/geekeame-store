@@ -5,6 +5,10 @@ interface StarRatingProps {
   onChange?: (value: number) => void;
   readOnly?: boolean;
   size?: "sm" | "md";
+  // Estrellas vacías: text-gray-300 (gris clarito) se ve casi blanco --
+  // como si estuviera "llena" -- contra el fondo oscuro (#0f0e17), así que
+  // en dark mode usa un tono violeta apagado que sí lee como "vacío".
+  dark?: boolean;
 }
 
 // Un solo componente para los dos casos de uso (promedio de solo lectura +
@@ -16,9 +20,11 @@ export function StarRating({
   onChange,
   readOnly = false,
   size = "md",
+  dark = false,
 }: StarRatingProps) {
   const sizeClass = size === "sm" ? "text-base" : "text-2xl";
   const filledUpTo = Math.round(value);
+  const emptyClass = dark ? "text-[#4b4566]" : "text-gray-300";
 
   if (readOnly) {
     return (
@@ -29,7 +35,7 @@ export function StarRating({
         {STARS.map((star) => (
           <span
             key={star}
-            className={star <= filledUpTo ? "text-yellow-500" : "text-gray-300"}
+            className={star <= filledUpTo ? "text-yellow-500" : emptyClass}
           >
             ★
           </span>
@@ -51,7 +57,7 @@ export function StarRating({
           className={
             star <= value
               ? "text-yellow-500 hover:text-yellow-600"
-              : "text-gray-300 hover:text-yellow-400"
+              : `${emptyClass} hover:text-yellow-400`
           }
         >
           ★

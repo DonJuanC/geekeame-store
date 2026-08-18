@@ -1,8 +1,15 @@
+import type { ProductCategoryId } from "./product";
+
 export interface CartItem {
   productId: string;
   name: string;
   price: number;
   imageUrl: string;
+  // Se agrega para que CartPage pueda mostrar el mismo placeholder
+  // emoji+color que el resto del sitio (ver ProductImage/
+  // productPlaceholder.ts) en vez de la <img> cruda de placehold.co --
+  // antes no se guardaba porque nada del carrito la necesitaba.
+  categoryId: ProductCategoryId;
   quantity: number;
 }
 

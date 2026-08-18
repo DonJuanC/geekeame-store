@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useTheme } from "../../hooks/useTheme";
 import {
   listReviewsForProduct,
   summarizeReviews,
@@ -25,6 +26,8 @@ interface ProductReviewsProps {
 
 export function ProductReviews({ productId }: ProductReviewsProps) {
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [reviews, setReviews] = useState<Review[]>([]);
   const [status, setStatus] = useState<"loading" | "idle" | "error">(
     "loading",
@@ -87,49 +90,56 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
     }
   }
 
+  const borderColor = isDark ? "border-[#2e2a45]" : "border-[#ede9fe]";
+  const mutedText = isDark ? "text-[#9ca3af]" : "text-gray-500";
+
   return (
-    <div className="mt-8 border-t pt-6">
+    <div className={`mt-8 border-t pt-6 ${borderColor}`}>
       <div className="flex items-center gap-3 mb-4">
         <h2 className="text-lg font-bold">Reseñas</h2>
         {count > 0 && (
-          <span className="flex items-center gap-2 text-sm text-gray-600">
-            <StarRating value={average} readOnly size="sm" />
+          <span className={`flex items-center gap-2 text-sm ${mutedText}`}>
+            <StarRating value={average} readOnly size="sm" dark={isDark} />
             {average.toFixed(1)} ({count})
           </span>
         )}
       </div>
 
-      {status === "loading" && <LoadingState label="Cargando reseñas..." />}
+      {status === "loading" && <LoadingState label="Cargando reseñas..." dark={isDark} />}
       {status === "error" && (
         <ErrorState
           message="No pudimos cargar las reseñas."
           onRetry={fetchReviews}
+          dark={isDark}
         />
       )}
 
       {status === "idle" && (
         <>
           {count === 0 && (
-            <p className="text-gray-500 text-sm mb-4">
+            <p className={`text-sm mb-4 ${mutedText}`}>
               Todavía no hay reseñas para este producto.
             </p>
           )}
 
           <div className="flex flex-col gap-4 mb-6">
             {reviews.map((review) => (
-              <div key={review.id} className="border rounded p-3">
+              <div
+                key={review.id}
+                className={`rounded-xl border p-3 ${
+                  isDark ? "bg-[#1c1a29] border-[#2e2a45]" : borderColor
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">
                     {displayName(review.userEmail)}
                   </span>
-                  <StarRating value={review.rating} readOnly size="sm" />
+                  <StarRating value={review.rating} readOnly size="sm" dark={isDark} />
                 </div>
                 {review.comment && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    {review.comment}
-                  </p>
+                  <p className={`text-sm mt-1 ${mutedText}`}>{review.comment}</p>
                 )}
-                <p className="text-xs text-gray-400 mt-1">
+                <p className={`text-xs mt-1 ${isDark ? "text-[#6b6485]" : "text-gray-400"}`}>
                   {new Date(review.createdAt).toLocaleDateString("es-CO")}
                 </p>
               </div>
@@ -139,26 +149,32 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
           {user ? (
             <form
               onSubmit={handleSubmit}
-              className="border rounded p-3 flex flex-col gap-3"
+              className={`rounded-xl border p-3 flex flex-col gap-3 ${
+                isDark ? "bg-[#1c1a29] border-[#2e2a45]" : borderColor
+              }`}
             >
               <p className="text-sm font-medium">
                 {ownReview ? "Edita tu reseña" : "Deja tu reseña"}
               </p>
-              <StarRating value={rating} onChange={setRating} />
+              <StarRating value={rating} onChange={setRating} dark={isDark} />
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="¿Qué te pareció el producto? (opcional)"
-                className="border rounded p-2 text-sm"
+                className={`rounded-lg p-2 text-sm border focus:outline-none focus:ring-2 focus:ring-[#c4b5fd] ${
+                  isDark ? "bg-[#161320] border-[#2e2a45] text-[#f5f3ff]" : borderColor
+                }`}
                 rows={3}
               />
               {submitStatus === "error" && (
-                <p className="text-red-600 text-sm">{submitError}</p>
+                <p className={`text-sm ${isDark ? "text-[#f87171]" : "text-red-600"}`}>
+                  {submitError}
+                </p>
               )}
               <button
                 type="submit"
                 disabled={rating === 0 || submitStatus === "submitting"}
-                className="border rounded px-4 py-2 text-sm bg-black text-white disabled:opacity-50 self-start"
+                className="rounded-full px-4 py-2 text-sm font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] disabled:opacity-50 self-start transition-colors"
               >
                 {submitStatus === "submitting"
                   ? "Guardando..."
@@ -168,8 +184,11 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
               </button>
             </form>
           ) : (
-            <p className="text-sm text-gray-500">
-              <Link to="/login" className="underline">
+            <p className={`text-sm ${mutedText}`}>
+              <Link
+                to="/login"
+                className={isDark ? "text-[#c4b5fd] hover:text-[#a78bfa]" : "text-[#6d28d9] hover:text-[#4c1d95]"}
+              >
                 Inicia sesión
               </Link>{" "}
               para dejar tu reseña.

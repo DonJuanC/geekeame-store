@@ -17,6 +17,7 @@ export function ProductCard({ product }: { product: Product }) {
       name: product.name,
       price: product.price,
       imageUrl: product.imageUrl,
+      categoryId: product.categoryId,
     });
   }
 

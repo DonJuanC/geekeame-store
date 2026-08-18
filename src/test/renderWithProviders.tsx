@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../contexts/AuthContext";
 import { CartProvider } from "../contexts/CartContext";
+import { ThemeProvider } from "../contexts/ThemeContext";
 
 // Wrapper único con los providers reales del proyecto (no mocks del context).
 // A diferencia del patrón "preloadedAuth/preloadedCart" de otros proyectos,
@@ -15,12 +16,19 @@ import { CartProvider } from "../contexts/CartContext";
 //   - Auth: mockear "firebase/auth" (onAuthStateChanged) y
 //     "../services/authService" antes de renderizar.
 // Se agrega MemoryRouter porque varias páginas usan useNavigate/Link.
+// ThemeProvider se agregó junto con el modo claro/oscuro: StoreHeader,
+// HomePage, ProductCard, AdminLayout y varias páginas más ahora llaman
+// useTheme(), que revienta con "useTheme debe usarse dentro de
+// <ThemeProvider>" si el árbol no lo tiene envuelto -- por eso vive acá
+// (un solo lugar) y no hay que tocar cada test individual.
 function Providers({ children }: { children: ReactNode }) {
   return (
     <MemoryRouter>
-      <AuthProvider>
-        <CartProvider>{children}</CartProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <CartProvider>{children}</CartProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </MemoryRouter>
   );
 }
