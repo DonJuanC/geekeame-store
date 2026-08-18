@@ -2,9 +2,11 @@ import {
   collection,
   doc,
   getDocs,
+  limit,
   orderBy,
   query,
   runTransaction,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import { db } from "./firebase";
@@ -70,4 +72,27 @@ export async function listOrdersForUser(userId: string): Promise<Order[]> {
   );
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Order);
+}
+
+// Listado para el panel admin: todas las órdenes, sin filtrar por dueño
+// (firestore.rules ya exige isAdmin() para leer órdenes ajenas). El filtro
+// por estado se hace en el cliente sobre este mismo listado en vez de con
+// where("status", "==", ...) para no depender de un índice compuesto de
+// Firestore (status + orderBy(createdAt)) que habría que crear aparte.
+export async function listAllOrders(): Promise<Order[]> {
+  const q = query(
+    collection(db, "orders"),
+    orderBy("createdAt", "desc"),
+    limit(500),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Order);
+}
+
+export async function updateOrderStatus(
+  id: string,
+  status: OrderStatus,
+): Promise<void> {
+  const ref = doc(db, "orders", id);
+  await updateDoc(ref, { status, updatedAt: Date.now() });
 }

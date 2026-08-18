@@ -1,0 +1,118 @@
+import { useCallback, useEffect, useState } from "react";
+import {
+  listAllOrders,
+  updateOrderStatus,
+} from "../../services/ordersService";
+import type { Order, OrderStatus } from "../../types/order";
+import { OrdersTable, OrdersTableSkeleton } from "../../components/admin/OrdersTable";
+import { ORDER_STATUS_LABELS } from "../../constants/orderStatus";
+import { EmptyState } from "../../components/states/EmptyState";
+import { ErrorState } from "../../components/states/ErrorState";
+
+type Status = "loading" | "idle" | "error";
+
+const STATUS_FILTERS: Array<{ value: OrderStatus | "all"; label: string }> = [
+  { value: "all", label: "Todos" },
+  { value: "pending", label: ORDER_STATUS_LABELS.pending },
+  { value: "processing", label: ORDER_STATUS_LABELS.processing },
+  { value: "completed", label: ORDER_STATUS_LABELS.completed },
+  { value: "cancelled", label: ORDER_STATUS_LABELS.cancelled },
+];
+
+export function AdminOrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [status, setStatus] = useState<Status>("loading");
+  const [filter, setFilter] = useState<OrderStatus | "all">("all");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  // Mismo patrón que AdminProductsPage: nada de setState síncrono al
+  // arrancar el efecto (react-hooks/set-state-in-effect). El reintento
+  // manual sí resetea "loading"/actionError, porque corre desde un click.
+  const fetchOrders = useCallback(() => {
+    return listAllOrders()
+      .then((result) => {
+        setOrders(result);
+        setStatus("idle");
+      })
+      .catch(() => setStatus("error"));
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  function handleRetry() {
+    setStatus("loading");
+    setActionError(null);
+    fetchOrders();
+  }
+
+  async function handleStatusChange(order: Order, newStatus: OrderStatus) {
+    if (newStatus === order.status) return;
+
+    setUpdatingId(order.id);
+    setActionError(null);
+    try {
+      await updateOrderStatus(order.id, newStatus);
+      // Actualiza en memoria en vez de recargar todo: evita un fetch
+      // completo por cada cambio de estado y mantiene el filtro actual.
+      setOrders((current) =>
+        current.map((o) =>
+          o.id === order.id ? { ...o, status: newStatus } : o,
+        ),
+      );
+    } catch (err) {
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : "No pudimos actualizar el estado del pedido. Intenta de nuevo.",
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  const visibleOrders =
+    filter === "all" ? orders : orders.filter((o) => o.status === filter);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h1 className="text-xl font-bold">Pedidos</h1>
+
+      <div className="flex gap-2 text-sm flex-wrap">
+        {STATUS_FILTERS.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setFilter(f.value)}
+            className={`border rounded px-3 py-1 ${
+              filter === f.value ? "bg-black text-white" : ""
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {actionError && <p className="text-red-600 text-sm">{actionError}</p>}
+
+      {status === "loading" && <OrdersTableSkeleton />}
+      {status === "error" && (
+        <ErrorState
+          message="No pudimos cargar los pedidos."
+          onRetry={handleRetry}
+        />
+      )}
+      {status === "idle" && visibleOrders.length === 0 && (
+        <EmptyState message="No hay pedidos con este filtro." />
+      )}
+      {status === "idle" && visibleOrders.length > 0 && (
+        <OrdersTable
+          orders={visibleOrders}
+          updatingId={updatingId}
+          onStatusChange={handleStatusChange}
+        />
+      )}
+    </div>
+  );
+}
