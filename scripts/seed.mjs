@@ -109,13 +109,40 @@ for (const categoryId of categoryIds) {
   });
 }
 
+// Mismo algoritmo que buildSearchKeywords en src/services/productsService.ts
+// -- duplicado acá porque este script corre standalone con Node (no pasa
+// por el bundler de Vite), no porque haya que mantenerlo sincronizado a
+// mano: si cambia el de productsService.ts, actualizar también acá.
+function buildSearchKeywords(name) {
+  const words = name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(new RegExp("[\\u0300-\\u036f]", "g"), "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+
+  const keywords = new Set();
+  for (const word of words) {
+    for (let i = 1; i <= word.length; i++) {
+      keywords.add(word.slice(0, i));
+    }
+  }
+  return Array.from(keywords);
+}
+
 async function seed() {
   await signInWithEmailAndPassword(auth, process.env.SEED_ADMIN_EMAIL, process.env.SEED_ADMIN_PASSWORD);
 
   const batch = writeBatch(db);
   for (const p of products) {
     const ref = doc(collection(db, "products"));
-    batch.set(ref, { ...p, nameLower: p.name.toLowerCase(), createdAt: Date.now() });
+    batch.set(ref, {
+      ...p,
+      nameLower: p.name.toLowerCase(),
+      searchKeywords: buildSearchKeywords(p.name),
+      createdAt: Date.now(),
+    });
   }
   await batch.commit();
   console.log(`Sembrados ${products.length} productos.`);
