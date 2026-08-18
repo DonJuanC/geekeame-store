@@ -6,17 +6,20 @@ import "./index.css";
 import App from "./App.tsx";
 import { ProductsProvider } from "./contexts/ProductsContext.tsx";
 import { CartProvider } from "./contexts/CartContext.tsx";
+import { ThemeProvider } from "./contexts/ThemeContext.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <ProductsProvider>
-          <CartProvider>
-            <App />
-          </CartProvider>
-        </ProductsProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ProductsProvider>
+            <CartProvider>
+              <App />
+            </CartProvider>
+          </ProductsProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </StrictMode>,
 );

@@ -1,1 +1,28 @@
 @import "tailwindcss";
+
+/* El bloque @theme de Tailwind (para definir bg-brand-*, text-accent-*,
+   etc. como utilidades con nombre) no se está procesando en este setup
+   -- confirmado pescando el CSS que sirve el dev server: el @theme queda
+   literal, sin convertir, así que ninguna clase que dependiera de él
+   existía de verdad. En vez de depender de eso, los colores de marca se
+   pasan como valores arbitrarios directos (bg-[#7c3aed], etc.) en los
+   componentes -- no depende de @theme, es sintaxis núcleo de Tailwind.
+   Paleta de referencia (pop geek/arcade):
+     violeta primario: #7c3aed (hover #6d28d9)
+     magenta acento:   #ec4899 (hover #db2777)
+     texto:            #1a1625
+
+   Modo claro/oscuro: por el mismo motivo (nada de directivas custom de
+   Tailwind v4 -- ni @theme ni @custom-variant, ambas corren por el mismo
+   mecanismo que no procesa acá), el toggle NO usa el dark: variant de
+   Tailwind. Vive en ThemeContext (localStorage + prefers-color-scheme
+   como default) y cada componente elige entre dos sets de clases
+   arbitrarias según theme === "dark". Alcance actual: Home + header +
+   product cards. El resto del sitio sigue en claro sin importar el
+   toggle hasta que se extienda ese trabajo.
+     fondo oscuro:   #0f0e17
+     header oscuro:  #161320 / borde #2e2a45
+     card oscura:    #1c1a29 / borde #2e2a45, hover borde #7c3aed */
+body {
+  color: #1a1625;
+}
