@@ -1,7 +1,7 @@
 export type ProductCategoryId =
   | "pines"
   | "stickers"
-  | "cuadros-punto-cruz"
+  | "posters"
   | "llaveros"
   | "tazas";
 

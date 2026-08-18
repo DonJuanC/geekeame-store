@@ -46,7 +46,7 @@ const peliculasYSeries = [
 const categoryMeta = {
   "pines": { unit: "Pin", priceRange: [10000, 13000], desc: "Pin esmaltado, 3cm." },
   "stickers": { unit: "Sticker", priceRange: [5000, 8000], desc: "Sticker vinilo resistente al agua." },
-  "cuadros-punto-cruz": { unit: "Cuadro Punto de Cruz", priceRange: [42000, 52000], desc: "Cuadro enmarcado, 15x15cm." },
+  "posters": { unit: "Poster", priceRange: [15000, 25000], desc: "Poster impreso, tamaño A3." },
   "llaveros": { unit: "Llavero", priceRange: [8000, 12000], desc: "Llavero acrílico, 5cm." },
   "tazas": { unit: "Taza", priceRange: [25000, 35000], desc: "Taza cerámica, 11oz." },
 };
