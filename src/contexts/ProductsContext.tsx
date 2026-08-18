@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import type { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { listProducts } from "../services/productsService";
 import type { Product } from "../types/product";
 import { ProductsContext, type ProductsStatus } from "../hooks/useProducts";
@@ -26,17 +27,35 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   // AdminOrdersPage, AdminProductFormPage y ProductDetailPage.
   const [loadedParams, setLoadedParams] = useState<LoadedParams | null>(null);
 
+  // Paginación: cursor de la página actual (null = no hay más para pedir).
+  // isLoadingMore es un loading aparte del "status" de la primera carga
+  // para no reemplazar la grilla ya visible por un spinner de página
+  // completa mientras se trae la siguiente tanda. loadMoreError también
+  // va separado de "error": si falla "cargar más", los productos ya
+  // listados se quedan visibles, no se pierden.
+  const [cursor, setCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(
+    null,
+  );
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+
   useEffect(() => {
     const timeoutId = setTimeout(() => setDebouncedSearch(searchInput), 400);
     return () => clearTimeout(timeoutId);
   }, [searchInput]);
 
+  // Primera página del filtro actual. Se dispara de nuevo cada vez que
+  // cambia categoryId o debouncedSearch, y reemplaza products/cursor desde
+  // cero -- "cargar más" (loadMore) es una acción aparte, no vive en este
+  // efecto.
   useEffect(() => {
     let cancelled = false;
+    setLoadMoreError(null);
     listProducts({ categoryId, searchTerm: debouncedSearch })
       .then((result) => {
         if (cancelled) return;
-        setProducts(result);
+        setProducts(result.products);
+        setCursor(result.nextCursor);
         setResolvedStatus("idle");
         setError(null);
         setLoadedParams({ categoryId, searchTerm: debouncedSearch });
@@ -60,6 +79,26 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
 
   const status: ProductsStatus = isLoading ? "loading" : resolvedStatus;
 
+  async function loadMore() {
+    if (!cursor || isLoadingMore || isLoading) return;
+    setIsLoadingMore(true);
+    setLoadMoreError(null);
+    try {
+      const result = await listProducts({
+        categoryId,
+        searchTerm: debouncedSearch,
+        cursor,
+      });
+      setProducts((prev) => [...prev, ...result.products]);
+      setCursor(result.nextCursor);
+    } catch (err) {
+      console.error(err);
+      setLoadMoreError("No pudimos cargar más productos. Intenta de nuevo.");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }
+
   return (
     <ProductsContext.Provider
       value={{
@@ -70,6 +109,10 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
         searchInput,
         setCategoryId,
         setSearchInput,
+        hasMore: cursor !== null,
+        isLoadingMore,
+        loadMoreError,
+        loadMore,
       }}
     >
       {children}

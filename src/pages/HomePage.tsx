@@ -25,6 +25,10 @@ export function HomePage() {
     searchInput,
     setCategoryId,
     setSearchInput,
+    hasMore,
+    isLoadingMore,
+    loadMoreError,
+    loadMore,
   } = useProducts();
   const { items } = useCart();
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
@@ -95,11 +99,28 @@ export function HomePage() {
         <EmptyState message="No encontramos productos que coincidan." />
       )}
       {status === "idle" && products.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {products.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="flex flex-col items-center gap-2 mt-6">
+              {loadMoreError && (
+                <p className="text-red-600 text-sm">{loadMoreError}</p>
+              )}
+              <button
+                onClick={loadMore}
+                disabled={isLoadingMore}
+                className="border rounded px-4 py-2 text-sm disabled:opacity-50"
+              >
+                {isLoadingMore ? "Cargando..." : "Cargar más"}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

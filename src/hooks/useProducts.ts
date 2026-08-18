@@ -11,6 +11,14 @@ export interface ProductsContextValue {
   searchInput: string;
   setCategoryId: (id: string | null) => void;
   setSearchInput: (term: string) => void;
+  // Paginación: hasMore indica si listProducts devolvió un cursor válido
+  // para la página actual (categoryId + búsqueda). isLoadingMore es un
+  // loading separado del "status" principal para no tapar la grilla ya
+  // cargada con un spinner de página completa al pedir la próxima tanda.
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  loadMoreError: string | null;
+  loadMore: () => void;
 }
 
 // Mismo motivo que AuthContext/CartContext: el Context vive en el .ts del

@@ -6,25 +6,28 @@ import {
   limit,
   orderBy,
   query,
+  startAfter,
   updateDoc,
   where,
   doc,
   getDoc,
+  type DocumentData,
+  type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { Product } from "../types/product";
 
-// Quita tildes/diacr\u00edticos para que "pokemon" matchee "Pok\u00e9mon".
+// Quita tildes/diacríticos para que "pokemon" matchee "Pokémon".
 function stripAccents(text: string): string {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-// Prefijos en min\u00fascula de cada palabra del nombre ("Llavero Alien" ->
+// Prefijos en minúscula de cada palabra del nombre ("Llavero Alien" ->
 // "l","ll","lla",...,"llavero","a","al","ali","alie","alien"). Permite
 // buscar por cualquier palabra del nombre (no solo por el nombre completo
-// desde el inicio) usando array-contains, que s\u00ed soporta substring/palabra
+// desde el inicio) usando array-contains, que sí soporta substring/palabra
 // parcial a diferencia del orderBy+startAt/endAt sobre nameLower que solo
-// hac\u00eda match por prefijo del NOMBRE COMPLETO (buscar "Alien" no encontraba
+// hacía match por prefijo del NOMBRE COMPLETO (buscar "Alien" no encontraba
 // "Llavero Alien" porque el nombre no empieza por "alien").
 export function buildSearchKeywords(name: string): string[] {
   const words = stripAccents(name.toLowerCase())
@@ -41,9 +44,9 @@ export function buildSearchKeywords(name: string): string[] {
   return Array.from(keywords);
 }
 
-// Token de b\u00fasqueda: array-contains solo soporta UN valor por query, as\u00ed
+// Token de búsqueda: array-contains solo soporta UN valor por query, así
 // que si el usuario escribe varias palabras ("Llavero Ali") tomamos la
-// \u00faltima -- es la m\u00e1s espec\u00edfica mientras sigue escribiendo.
+// última -- es la más específica mientras sigue escribiendo.
 function searchToken(searchTerm: string): string | null {
   const words = stripAccents(searchTerm.toLowerCase())
     .replace(/[^a-z0-9\s]/g, " ")
@@ -53,17 +56,33 @@ function searchToken(searchTerm: string): string | null {
   return words.length ? words[words.length - 1] : null;
 }
 
+export const PRODUCTS_PAGE_SIZE = 12;
+
 export interface ListProductsParams {
   categoryId?: string | null;
   searchTerm?: string;
-  maxResults?: number;
+  pageSize?: number;
+  // Cursor de Firestore (el último doc de la página anterior). Se pide
+  // "cargar más" pasando el cursor devuelto por la llamada previa -- ver
+  // ProductsContext.loadMore.
+  cursor?: QueryDocumentSnapshot<DocumentData> | null;
+}
+
+export interface ListProductsResult {
+  products: Product[];
+  // null = no hay más páginas (o la búsqueda actual no soporta paginar,
+  // ver nota más abajo). Se guarda tal cual el QueryDocumentSnapshot en
+  // vez de solo el id/createdAt porque startAfter() de Firestore lo pide
+  // así -- reconstruir un cursor equivalente a mano es más frágil.
+  nextCursor: QueryDocumentSnapshot<DocumentData> | null;
 }
 
 export async function listProducts({
   categoryId,
   searchTerm,
-  maxResults = 60,
-}: ListProductsParams): Promise<Product[]> {
+  pageSize = PRODUCTS_PAGE_SIZE,
+  cursor = null,
+}: ListProductsParams): Promise<ListProductsResult> {
   const constraints = [];
   const token = searchTerm ? searchToken(searchTerm) : null;
 
@@ -73,18 +92,31 @@ export async function listProducts({
 
   if (token) {
     constraints.push(where("searchKeywords", "array-contains", token));
-    // Sin orderBy ac\u00e1: agregarlo junto con el where de categoryId dispara
-    // otro \u00edndice compuesto distinto. El orden importa poco en resultados
-    // de b\u00fasqueda de un cat\u00e1logo chico.
+    // Sin orderBy ni cursor acá: agregar orderBy junto al where de
+    // categoryId + el array-contains pediría un tercer índice compuesto,
+    // y sin un orden estable no hay forma correcta de paginar con
+    // startAfter. Para un catálogo chico como este, devolver hasta
+    // pageSize resultados de búsqueda sin "cargar más" es una limitación
+    // aceptable -- ver nextCursor más abajo (siempre null si hay token).
   } else {
     constraints.push(orderBy("createdAt", "desc"));
+    if (cursor) constraints.push(startAfter(cursor));
   }
 
-  constraints.push(limit(maxResults));
+  constraints.push(limit(pageSize));
 
   const q = query(collection(db, "products"), ...constraints);
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Product);
+  const products = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Product);
+
+  // Si la página vino completa (== pageSize) asumimos que puede haber más
+  // y ofrecemos seguir paginando; si vino corta, ya no hay nada después.
+  const nextCursor =
+    !token && snap.docs.length === pageSize
+      ? snap.docs[snap.docs.length - 1]
+      : null;
+
+  return { products, nextCursor };
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
