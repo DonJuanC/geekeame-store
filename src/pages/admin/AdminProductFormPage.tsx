@@ -288,196 +288,252 @@ export function AdminProductFormPage() {
     isDark ? "bg-[#161320] border-[#2e2a45] text-[#f5f3ff]" : "border-[#ede9fe]"
   }`;
   const errorClass = isDark ? "text-[#f87171] text-sm mt-1" : "text-red-600 text-sm mt-1";
+  // Antes el form era una columna suelta de label+input sin agrupar, con un
+  // preview de 80x80 -- se veía "de admin viejo" comparado con el resto del
+  // sitio, que envuelve todo en cards rounded-xl. Ahora vive en la misma
+  // card que las tablas de ProductsTable/OrdersTable, con la imagen como
+  // dropzone cuadrado (mismo aspect-square que usa la imagen en todo el
+  // resto del sitio -- ver ProductCard/ProductDetailPage) en vez de un
+  // <input type=file> nativo suelto.
+  const cardClass = `rounded-2xl border p-5 sm:p-6 ${
+    isDark ? "bg-[#1c1a29] border-[#2e2a45]" : "border-[#ede9fe]"
+  }`;
+  const secondaryButtonClass = `rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
+    isDark
+      ? "border-[#3f3a5c] text-[#c4b5fd] hover:bg-[#211d34]"
+      : "border-[#ddd6fe] text-[#6d28d9] hover:bg-[#f5f3ff]"
+  }`;
 
   return (
-    <div className="max-w-lg">
+    <div className="max-w-2xl">
       {backLink}
-      <h1 className="text-xl font-bold my-4">
+      <h1 className="text-xl font-bold mt-4 mb-1">
         {isEditing ? "Editar producto" : "Nuevo producto"}
       </h1>
+      <p className={`text-sm mb-4 ${isDark ? "text-[#9ca3af]" : "text-gray-500"}`}>
+        {isEditing && fields.name
+          ? `Editando "${fields.name}".`
+          : "Completa los datos del producto para el catálogo."}
+      </p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div>
-          <label className="text-sm font-medium" htmlFor="name">
-            Nombre
-          </label>
-          <input
-            id="name"
-            value={fields.name}
-            disabled={isSubmitting}
-            onChange={(e) => setField("name", e.target.value)}
-            onBlur={() => handleBlur("name")}
-            aria-invalid={Boolean(errors.name)}
-            aria-describedby={errors.name ? "name-error" : undefined}
-            className={inputClass}
-          />
-          {errors.name && (
-            <p id="name-error" className={errorClass}>
-              {errors.name}
-            </p>
-          )}
-        </div>
+      <div className={cardClass}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <div className="grid sm:grid-cols-[220px_1fr] gap-6">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium" htmlFor="image">
+                Imagen del producto
+              </label>
+              <div
+                className={`relative aspect-square w-full max-w-[220px] rounded-xl border-2 border-dashed overflow-hidden flex items-center justify-center ${
+                  isDark ? "border-[#3f3a5c] bg-[#161320]" : "border-[#ddd6fe] bg-[#f5f3ff]"
+                }`}
+              >
+                {fields.imageUrl ? (
+                  <img
+                    src={fields.imageUrl}
+                    alt="Preview del producto"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-5xl" aria-hidden="true">
+                    🖼️
+                  </span>
+                )}
+                {imageStatus === "uploading" && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-sm font-medium">
+                    Subiendo…
+                  </div>
+                )}
+              </div>
+              <label
+                htmlFor="image"
+                className={`self-start cursor-pointer rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isSubmitting ? "pointer-events-none opacity-50" : ""
+                } ${
+                  isDark
+                    ? "border-[#3f3a5c] text-[#c4b5fd] hover:bg-[#211d34]"
+                    : "border-[#ddd6fe] text-[#6d28d9] hover:bg-[#f5f3ff]"
+                }`}
+              >
+                {fields.imageUrl ? "Cambiar imagen" : "Subir imagen"}
+              </label>
+              <input
+                id="image"
+                type="file"
+                accept={ALLOWED_IMAGE_TYPES.join(",")}
+                disabled={isSubmitting}
+                onChange={handleImageChange}
+                aria-invalid={Boolean(errors.imageUrl || (imageStatus === "error" && imageUploadError))}
+                aria-describedby={errors.imageUrl ? "imageUrl-error" : undefined}
+                className="sr-only"
+              />
+              <p className={`text-xs ${isDark ? "text-[#6b6485]" : "text-gray-400"}`}>
+                Cuadrada, hasta 5MB (PNG, JPG, WEBP o GIF).
+              </p>
+              {imageStatus === "error" && imageUploadError && (
+                <p role="alert" className={errorClass}>
+                  {imageUploadError}
+                </p>
+              )}
+              {errors.imageUrl && (
+                <p id="imageUrl-error" className={errorClass}>
+                  {errors.imageUrl}
+                </p>
+              )}
+            </div>
 
-        <div>
-          <label className="text-sm font-medium" htmlFor="categoryId">
-            Categoría
-          </label>
-          <select
-            id="categoryId"
-            value={fields.categoryId}
-            disabled={isSubmitting}
-            onChange={(e) =>
-              setField("categoryId", e.target.value as ProductCategoryId)
-            }
-            onBlur={() => handleBlur("categoryId")}
-            aria-invalid={Boolean(errors.categoryId)}
-            aria-describedby={errors.categoryId ? "categoryId-error" : undefined}
-            className={inputClass}
-          >
-            <option value="">Elige una categoría</option>
-            {PRODUCT_CATEGORIES.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-          {errors.categoryId && (
-            <p id="categoryId-error" className={errorClass}>
-              {errors.categoryId}
-            </p>
-          )}
-        </div>
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-sm font-medium" htmlFor="name">
+                  Nombre
+                </label>
+                <input
+                  id="name"
+                  value={fields.name}
+                  disabled={isSubmitting}
+                  onChange={(e) => setField("name", e.target.value)}
+                  onBlur={() => handleBlur("name")}
+                  aria-invalid={Boolean(errors.name)}
+                  aria-describedby={errors.name ? "name-error" : undefined}
+                  className={inputClass}
+                />
+                {errors.name && (
+                  <p id="name-error" className={errorClass}>
+                    {errors.name}
+                  </p>
+                )}
+              </div>
 
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <label className="text-sm font-medium" htmlFor="price">
-              Precio
+              <div>
+                <label className="text-sm font-medium" htmlFor="categoryId">
+                  Categoría
+                </label>
+                <select
+                  id="categoryId"
+                  value={fields.categoryId}
+                  disabled={isSubmitting}
+                  onChange={(e) =>
+                    setField("categoryId", e.target.value as ProductCategoryId)
+                  }
+                  onBlur={() => handleBlur("categoryId")}
+                  aria-invalid={Boolean(errors.categoryId)}
+                  aria-describedby={errors.categoryId ? "categoryId-error" : undefined}
+                  className={inputClass}
+                >
+                  <option value="">Elige una categoría</option>
+                  {PRODUCT_CATEGORIES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.categoryId && (
+                  <p id="categoryId-error" className={errorClass}>
+                    {errors.categoryId}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="text-sm font-medium" htmlFor="price">
+                    Precio
+                  </label>
+                  <input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="100"
+                    value={fields.price}
+                    disabled={isSubmitting}
+                    onChange={(e) => setField("price", e.target.value)}
+                    onBlur={() => handleBlur("price")}
+                    aria-invalid={Boolean(errors.price)}
+                    aria-describedby={errors.price ? "price-error" : undefined}
+                    className={inputClass}
+                  />
+                  {errors.price && (
+                    <p id="price-error" className={errorClass}>
+                      {errors.price}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex-1">
+                  <label className="text-sm font-medium" htmlFor="stock">
+                    Stock
+                  </label>
+                  <input
+                    id="stock"
+                    type="number"
+                    min="0"
+                    value={fields.stock}
+                    disabled={isSubmitting}
+                    onChange={(e) => setField("stock", e.target.value)}
+                    onBlur={() => handleBlur("stock")}
+                    aria-invalid={Boolean(errors.stock)}
+                    aria-describedby={errors.stock ? "stock-error" : undefined}
+                    className={inputClass}
+                  />
+                  {errors.stock && (
+                    <p id="stock-error" className={errorClass}>
+                      {errors.stock}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium" htmlFor="description">
+              Descripción
             </label>
-            <input
-              id="price"
-              type="number"
-              min="0"
-              step="100"
-              value={fields.price}
+            <textarea
+              id="description"
+              value={fields.description}
               disabled={isSubmitting}
-              onChange={(e) => setField("price", e.target.value)}
-              onBlur={() => handleBlur("price")}
-              aria-invalid={Boolean(errors.price)}
-              aria-describedby={errors.price ? "price-error" : undefined}
+              onChange={(e) => setField("description", e.target.value)}
+              onBlur={() => handleBlur("description")}
+              aria-invalid={Boolean(errors.description)}
+              aria-describedby={errors.description ? "description-error" : undefined}
               className={inputClass}
+              rows={4}
             />
-            {errors.price && (
-              <p id="price-error" className={errorClass}>
-                {errors.price}
+            {errors.description && (
+              <p id="description-error" className={errorClass}>
+                {errors.description}
               </p>
             )}
           </div>
 
-          <div className="flex-1">
-            <label className="text-sm font-medium" htmlFor="stock">
-              Stock
-            </label>
-            <input
-              id="stock"
-              type="number"
-              min="0"
-              value={fields.stock}
+          {globalError && (
+            <p
+              role="alert"
+              className={isDark ? "text-[#f87171] text-sm" : "text-red-600 text-sm"}
+            >
+              {globalError}
+            </p>
+          )}
+
+          <div className={`flex items-center justify-end gap-3 pt-2 border-t ${isDark ? "border-[#2e2a45]" : "border-[#ede9fe]"}`}>
+            <Link to="/admin" className={secondaryButtonClass}>
+              Cancelar
+            </Link>
+            <button
+              type="submit"
               disabled={isSubmitting}
-              onChange={(e) => setField("stock", e.target.value)}
-              onBlur={() => handleBlur("stock")}
-              aria-invalid={Boolean(errors.stock)}
-              aria-describedby={errors.stock ? "stock-error" : undefined}
-              className={inputClass}
-            />
-            {errors.stock && (
-              <p id="stock-error" className={errorClass}>
-                {errors.stock}
-              </p>
-            )}
+              className="rounded-full px-4 py-2.5 text-sm font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] disabled:opacity-50 transition-colors"
+            >
+              {isSubmitting
+                ? "Guardando…"
+                : isEditing
+                  ? "Guardar cambios"
+                  : "Crear producto"}
+            </button>
           </div>
-        </div>
-
-        <div>
-          <label className="text-sm font-medium" htmlFor="image">
-            Imagen del producto
-          </label>
-          <input
-            id="image"
-            type="file"
-            accept={ALLOWED_IMAGE_TYPES.join(",")}
-            disabled={isSubmitting}
-            onChange={handleImageChange}
-            aria-invalid={Boolean(errors.imageUrl || (imageStatus === "error" && imageUploadError))}
-            aria-describedby={errors.imageUrl ? "imageUrl-error" : undefined}
-            className={inputClass}
-          />
-          {imageStatus === "uploading" && (
-            <p className={`text-sm mt-1 ${isDark ? "text-[#9ca3af]" : "text-gray-500"}`}>
-              Subiendo imagen…
-            </p>
-          )}
-          {imageStatus === "error" && imageUploadError && (
-            <p role="alert" className={errorClass}>
-              {imageUploadError}
-            </p>
-          )}
-          {errors.imageUrl && (
-            <p id="imageUrl-error" className={errorClass}>
-              {errors.imageUrl}
-            </p>
-          )}
-          {fields.imageUrl && (
-            <img
-              src={fields.imageUrl}
-              alt="Preview"
-              className="w-20 h-20 object-cover rounded-lg mt-2"
-            />
-          )}
-        </div>
-
-        <div>
-          <label className="text-sm font-medium" htmlFor="description">
-            Descripción
-          </label>
-          <textarea
-            id="description"
-            value={fields.description}
-            disabled={isSubmitting}
-            onChange={(e) => setField("description", e.target.value)}
-            onBlur={() => handleBlur("description")}
-            aria-invalid={Boolean(errors.description)}
-            aria-describedby={errors.description ? "description-error" : undefined}
-            className={inputClass}
-            rows={4}
-          />
-          {errors.description && (
-            <p id="description-error" className={errorClass}>
-              {errors.description}
-            </p>
-          )}
-        </div>
-
-        {globalError && (
-          <p
-            role="alert"
-            className={isDark ? "text-[#f87171] text-sm" : "text-red-600 text-sm"}
-          >
-            {globalError}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-full px-4 py-2.5 font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] disabled:opacity-50 transition-colors"
-        >
-          {isSubmitting
-            ? "Guardando…"
-            : isEditing
-              ? "Guardar cambios"
-              : "Crear producto"}
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

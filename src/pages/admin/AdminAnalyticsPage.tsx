@@ -113,21 +113,21 @@ export function AdminAnalyticsPage() {
 
       <section>
         <h2 className="font-bold mb-2">Ventas de los últimos 7 días</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className={`text-left ${mutedText}`}>
-                <th className="py-1 pr-4">Día</th>
-                <th className="py-1 pr-4">Pedidos</th>
-                <th className="py-1">Ingresos</th>
+        <div className={`overflow-x-auto rounded-xl border ${borderColor}`}>
+          <table className="w-full text-sm text-left border-collapse">
+            <thead className={isDark ? "bg-[#1c1a29]" : "bg-gray-50"}>
+              <tr>
+                <th className={`p-2 text-xs uppercase ${mutedText}`}>Día</th>
+                <th className={`p-2 text-xs uppercase ${mutedText}`}>Pedidos</th>
+                <th className={`p-2 text-xs uppercase ${mutedText}`}>Ingresos</th>
               </tr>
             </thead>
             <tbody>
               {dailySales.map((d) => (
                 <tr key={d.date} className={`border-t ${borderColor}`}>
-                  <td className="py-1 pr-4">{d.date}</td>
-                  <td className="py-1 pr-4">{d.orders}</td>
-                  <td className="py-1">{money(d.revenue)}</td>
+                  <td className="p-2">{d.date}</td>
+                  <td className="p-2">{d.orders}</td>
+                  <td className="p-2">{money(d.revenue)}</td>
                 </tr>
               ))}
             </tbody>
@@ -142,21 +142,21 @@ export function AdminAnalyticsPage() {
             Todavía no hay pedidos completados para calcular esto.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className={`text-left ${mutedText}`}>
-                  <th className="py-1 pr-4">Producto</th>
-                  <th className="py-1 pr-4">Unidades vendidas</th>
-                  <th className="py-1">Ingresos</th>
+          <div className={`overflow-x-auto rounded-xl border ${borderColor}`}>
+            <table className="w-full text-sm text-left border-collapse">
+              <thead className={isDark ? "bg-[#1c1a29]" : "bg-gray-50"}>
+                <tr>
+                  <th className={`p-2 text-xs uppercase ${mutedText}`}>Producto</th>
+                  <th className={`p-2 text-xs uppercase ${mutedText}`}>Unidades vendidas</th>
+                  <th className={`p-2 text-xs uppercase ${mutedText}`}>Ingresos</th>
                 </tr>
               </thead>
               <tbody>
                 {topProducts.map((p) => (
                   <tr key={p.productId} className={`border-t ${borderColor}`}>
-                    <td className="py-1 pr-4">{p.name}</td>
-                    <td className="py-1 pr-4">{p.quantity}</td>
-                    <td className="py-1">{money(p.revenue)}</td>
+                    <td className="p-2">{p.name}</td>
+                    <td className="p-2">{p.quantity}</td>
+                    <td className="p-2">{money(p.revenue)}</td>
                   </tr>
                 ))}
               </tbody>
