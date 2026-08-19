@@ -10,43 +10,13 @@ import { EmptyState } from "../components/states/EmptyState";
 import { ErrorState } from "../components/states/ErrorState";
 import { PRODUCT_CATEGORIES } from "../constants/categories";
 import { listFeaturedCandidates } from "../services/productsService";
+import { interleaveByCategory } from "../utils/interleaveByCategory";
 import type { Product } from "../types/product";
 
 // Cantidad de productos en "Destacados". No hay flag de "featured" en
 // Firestore todavía, así que sigue siendo automático a partir de lo más
 // reciente, no una curación manual.
 const FEATURED_COUNT = 6;
-
-// Combina los grupos que devuelve listFeaturedCandidates (uno por
-// categoría, cada uno ya ordenado por createdAt desc) alternando entre
-// categorías en vez de agotar una antes de pasar a la siguiente: primera
-// ronda toma el más reciente de CADA categoría, segunda ronda el segundo
-// más reciente de cada una que todavía tenga, etc. Un simple concat + slice
-// hubiera dejado la vitrina corrida hacia las categorías con más grupos/
-// stock reciente (ver el bug real: Destacados terminaba siendo 5 tazas y
-// 1 llavero) en vez de alternar.
-export function interleaveByCategory(
-  groups: Product[][],
-  count: number,
-): Product[] {
-  const featured: Product[] = [];
-  let round = 0;
-
-  while (featured.length < count) {
-    let addedThisRound = false;
-    for (const group of groups) {
-      if (featured.length >= count) break;
-      const product = group[round];
-      if (!product) continue;
-      featured.push(product);
-      addedThisRound = true;
-    }
-    if (!addedThisRound) break;
-    round++;
-  }
-
-  return featured;
-}
 
 export function HomePage() {
   const {

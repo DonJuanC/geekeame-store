@@ -50,7 +50,13 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   // efecto.
   useEffect(() => {
     let cancelled = false;
-    setLoadMoreError(null);
+    // loadMoreError se limpia acá (dentro de los callbacks async, no
+    // síncrono al arrancar el efecto -- ver nota de loadedParams arriba,
+    // mismo motivo) en vez de al inicio: un error de "cargar más" queda
+    // obsoleto en cuanto cambia el filtro/búsqueda base. No hay diferencia
+    // visible con limpiarlo síncrono, porque mientras esta carga está en
+    // curso status es "loading" (isLoading arriba) y HomePage no renderiza
+    // loadMoreError bajo ese status de todos modos.
     listProducts({ categoryId, searchTerm: debouncedSearch })
       .then((result) => {
         if (cancelled) return;
@@ -58,6 +64,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
         setCursor(result.nextCursor);
         setResolvedStatus("idle");
         setError(null);
+        setLoadMoreError(null);
         setLoadedParams({ categoryId, searchTerm: debouncedSearch });
       })
       .catch((err) => {
@@ -65,6 +72,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
         console.error(err);
         setError("No pudimos cargar los productos. Intenta de nuevo.");
         setResolvedStatus("error");
+        setLoadMoreError(null);
         setLoadedParams({ categoryId, searchTerm: debouncedSearch });
       });
     return () => {

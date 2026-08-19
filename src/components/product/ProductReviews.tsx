@@ -37,10 +37,9 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   // La propia review del usuario se precarga en el form UNA sola vez (al
-  // llegar por primera vez), no en cada fetchReviews: si no, cada
-  // re-fetch (ej. después de guardar) pisaría lo que el usuario está
-  // escribiendo en ese momento.
-  const [prefilled, setPrefilled] = useState(false);
+  // llegar por primera vez, ver everPrefilled más abajo), no en cada
+  // fetchReviews: si no, cada re-fetch (ej. después de guardar) pisaría lo
+  // que el usuario está escribiendo en ese momento.
   const [submitStatus, setSubmitStatus] = useState<
     "idle" | "submitting" | "error"
   >("idle");
@@ -48,28 +47,37 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
 
   // Gate de "reseña solo si compraste": null mientras se resuelve (para no
   // mostrar el form un instante y esconderlo después), true/false una vez
-  // que se sabe. Se resetea a null cuando cambia el usuario (logout/login
-  // con otra cuenta) para no arrastrar el resultado de otra persona.
-  const [canReview, setCanReview] = useState<boolean | null>(null);
+  // que se sabe. rawCanReview/canReviewForKey solo se escriben dentro del
+  // .then (async, no dispara react-hooks/set-state-in-effect) -- canReview
+  // de abajo deriva null directo en el render mientras la key (usuario +
+  // producto) actual no coincida con la última resuelta, para no arrastrar
+  // el resultado de otra persona/producto.
+  const [rawCanReview, setRawCanReview] = useState<boolean | null>(null);
+  const [canReviewForKey, setCanReviewForKey] = useState<string | null>(null);
+  const reviewKey = user ? `${user.uid}:${productId}` : null;
 
   useEffect(() => {
-    if (!user) {
-      setCanReview(null);
-      return;
-    }
+    if (!user) return; // canReview de abajo ya deriva null
     let cancelled = false;
-    setCanReview(null);
     listOrdersForUser(user.uid).then((orders) => {
       if (cancelled) return;
-      setCanReview(hasPurchasedProduct(orders, productId));
+      setRawCanReview(hasPurchasedProduct(orders, productId));
+      setCanReviewForKey(`${user.uid}:${productId}`);
     });
     return () => {
       cancelled = true;
     };
   }, [user, productId]);
 
-  const fetchReviews = useCallback(() => {
-    setStatus("loading");
+  const canReview =
+    reviewKey && canReviewForKey === reviewKey ? rawCanReview : null;
+
+  // runFetchReviews no pone "loading" síncrono -- status ya arranca en
+  // "loading" (useState inicial arriba), así que el fetch del mount no
+  // necesita resetearlo. fetchReviews sí lo hace (setStatus("loading")
+  // síncrono) pero solo se llama desde handlers (retry, submit), nunca
+  // desde el efecto de mount -- ahí no aplica react-hooks/set-state-in-effect.
+  const runFetchReviews = useCallback(() => {
     return listReviewsForProduct(productId)
       .then((result) => {
         setReviews(result);
@@ -81,19 +89,28 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       });
   }, [productId]);
 
+  const fetchReviews = useCallback(() => {
+    setStatus("loading");
+    return runFetchReviews();
+  }, [runFetchReviews]);
+
   useEffect(() => {
-    fetchReviews();
-  }, [fetchReviews]);
+    runFetchReviews();
+  }, [runFetchReviews]);
 
   const ownReview = user && reviews.find((r) => r.userId === user.uid);
 
-  useEffect(() => {
-    if (!prefilled && ownReview) {
-      setRating(ownReview.rating);
-      setComment(ownReview.comment);
-      setPrefilled(true);
-    }
-  }, [prefilled, ownReview]);
+  // Ajuste de estado durante el render (no en un efecto): precarga rating/
+  // comment con la reseña propia UNA sola vez, la primera vez que aparece.
+  // Llamar setState acá, condicionado, es el patrón que React documenta
+  // para "inicializar estado editable a partir de un valor externo" sin el
+  // render extra de un efecto -- ver https://react.dev/learn/you-might-not-need-an-effect.
+  const [everPrefilled, setEverPrefilled] = useState(false);
+  if (!everPrefilled && ownReview) {
+    setEverPrefilled(true);
+    setRating(ownReview.rating);
+    setComment(ownReview.comment);
+  }
 
   const { average, count } = summarizeReviews(reviews);
 

@@ -1,18 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { Product } from "../types/product";
-
-// Solo se testea la función pura interleaveByCategory acá -- pero
-// importar "./HomePage" arrastra "../services/productsService", que a su
-// vez inicializa Firebase de verdad (getAuth/getFirestore) al importarse.
-// Sin mockear eso, el archivo entero falla al cargar en el entorno de test
-// (sin credenciales reales) antes de llegar a ningún test. vi.mock se
-// hoistea arriba de los imports normales, así que el import de abajo ya
-// recibe la versión mockeada.
-vi.mock("../services/productsService", () => ({
-  listFeaturedCandidates: vi.fn().mockResolvedValue([]),
-}));
-
-import { interleaveByCategory } from "./HomePage";
+import { interleaveByCategory } from "./interleaveByCategory";
 
 // Bug real en producción: Destacados se armaba con un slice de los
 // productos más recientes SIN filtro de categoría -- si esa página no

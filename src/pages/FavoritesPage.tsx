@@ -15,25 +15,30 @@ export function FavoritesPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const { list, status, error, toggleFavorite } = useFavorites();
-  const [products, setProducts] = useState<Product[] | null>(null);
+  // fetchedProducts solo se escribe dentro del .then (async, no dispara
+  // react-hooks/set-state-in-effect) y nunca se resetea síncrono a null en
+  // el efecto -- "products" de abajo deriva el null cuando list es null
+  // directo en el render, sin pasar por un setState extra. Mismo resultado
+  // que antes (products stale mientras se resuelve un list nuevo, null
+  // inmediato si list es null) con un render menos.
+  const [fetchedProducts, setFetchedProducts] = useState<Product[] | null>(null);
 
   // Se resuelven acá (no en el contexto) porque la lista solo guarda
   // productIds -- traer el Product completo de cada uno es responsabilidad
   // de la página que efectivamente lo va a mostrar.
   useEffect(() => {
-    if (!list) {
-      setProducts(null);
-      return;
-    }
+    if (!list) return;
     let cancelled = false;
     Promise.all(list.productIds.map((id) => getProductById(id))).then((results) => {
       if (cancelled) return;
-      setProducts(results.filter((p): p is Product => p !== null));
+      setFetchedProducts(results.filter((p): p is Product => p !== null));
     });
     return () => {
       cancelled = true;
     };
   }, [list]);
+
+  const products = list ? fetchedProducts : null;
 
   const isLoading = status === "loading" || (status === "idle" && list && products === null);
 
