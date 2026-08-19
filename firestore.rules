@@ -5,16 +5,21 @@ rules_version = '2';
 // escribir en "products", "orders" o "reviews" directamente desde el SDK de
 // Firebase o la consola del navegador, sin pasar por la app.
 //
-// Cómo aplicarlas: Firebase Console → Firestore Database → Reglas → pegar
-// este archivo → Publicar. (O `firebase deploy --only firestore:rules` si
-// usás Firebase CLI.)
+// Cómo aplicarlas (ahora con firebase.json ya configurado):
+//   firebase login
+//   firebase use geekeame-store   # ver .firebaserc
+//   firebase deploy --only firestore:rules,firestore:indexes
+// También se puede seguir pegando este archivo a mano en Firebase Console →
+// Firestore Database → Reglas → Publicar, pero el camino por CLI es el que
+// mantiene este archivo (y firestore.indexes.json) como la fuente real de
+// verdad en vez de una copia que hay que sincronizar a mano.
 //
-// Nota: este archivo refleja el estado publicado en la consola de Firebase
-// al momento de este commit -- las reglas se editan y publican desde ahí
-// (no hay firebase.json/CLI deploy configurado en este proyecto), así que
-// cualquier cambio hecho directo en la consola hay que traerlo también acá
-// para que el repo no quede desactualizado respecto a lo que corre en
-// producción.
+// Nota: firestore.indexes.json en este repo solo tiene documentado el
+// índice compuesto confirmado (orders: userId + createdAt, ver Error 7 en
+// la bitácora de IA/README) -- antes de depender de él como fuente
+// completa, correr `firebase firestore:indexes > firestore.indexes.json`
+// una vez logueado contra el proyecto real para traer la lista completa y
+// exacta de lo que ya existe en producción.
 service cloud.firestore {
   match /databases/{database}/documents {
 

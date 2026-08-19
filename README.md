@@ -67,7 +67,7 @@ npm install
 2. **Authentication** → pestaña "Sign-in method" → habilitar el proveedor "Correo electrónico/contraseña".
 3. **Firestore Database** → "Crear base de datos" → modo producción → elegir región (la más cercana a los usuarios esperados).
 4. **Configuración del proyecto** (ícono de engranaje) → "Tus apps" → agregar una app web → copiar los valores del objeto `firebaseConfig` que muestra (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId).
-5. Ir a **Firestore Database → Reglas**, pegar el contenido de `firestore.rules` (el archivo del repo) y publicar. Este proyecto no tiene el CLI de Firebase configurado para desplegar reglas automáticamente — se sincronizan a mano entre el repo y la consola.
+5. Publicar `firestore.rules` y `firestore.indexes.json` con el Firebase CLI (`npm install -g firebase-tools`, `firebase login`, `firebase use geekeame-store`, `firebase deploy --only firestore:rules,firestore:indexes`) — `firebase.json` ya está configurado para esto. También se puede seguir pegando `firestore.rules` a mano en Firestore Database → Reglas → Publicar si se prefiere, pero el repo deja de ser la fuente de verdad si se hace así.
 6. La primera vez que se navegue a "Mis pedidos" en desarrollo, Firestore puede pedir crear un **índice compuesto** (la consulta combina `where(userId)` + `orderBy(createdAt)`). El error en la consola del navegador trae un link directo para crearlo con un clic — hay que seguirlo la primera vez en cada proyecto de Firebase nuevo.
 
 ### 3. Crear el bucket de S3 en AWS
@@ -115,8 +115,9 @@ api/
 scripts/
   seed.mjs                    # carga productos de ejemplo en Firestore
   backfillSearchKeywords.mjs  # genera keywords de búsqueda para productos existentes
-firestore.rules  # reglas de seguridad publicadas en Firebase Console (ver notas en el archivo)
-firebase.json     # config de Firebase Hosting -- no se usa para desplegar (el deploy real es en Vercel); queda para poder correr `firebase deploy --only firestore:rules` en el futuro si se decide versionar las reglas por CLI
+firestore.rules          # reglas de seguridad -- desplegables por CLI (ver "Seguridad" abajo)
+firestore.indexes.json   # índices compuestos versionados -- hoy solo tiene el de orders (userId+createdAt), confirmado real; sincronizar con `firebase firestore:indexes` antes de asumirlo completo
+firebase.json            # config de Firestore (rules/indexes) + Hosting -- Hosting no se usa para desplegar (el deploy real es en Vercel), solo firestore:rules/firestore:indexes
 ```
 
 ## Funcionalidad
@@ -131,7 +132,7 @@ firebase.json     # config de Firebase Hosting -- no se usa para desplegar (el d
 
 ## Seguridad
 
-El control de acceso real vive en `firestore.rules`, no en la UI — los guards de React (`RequireAuth`, `RequireAdmin`) solo ocultan rutas y botones. Las reglas se editan y publican directo desde Firebase Console; el archivo en el repo es un espejo de lo publicado y hay que mantenerlo sincronizado a mano después de cualquier cambio en la consola.
+El control de acceso real vive en `firestore.rules`, no en la UI — los guards de React (`RequireAuth`, `RequireAdmin`) solo ocultan rutas y botones. Reglas e índices se despliegan con el Firebase CLI (`firebase deploy --only firestore:rules,firestore:indexes`), no a mano desde la consola — así el repo es la fuente de verdad en vez de una copia que hay que sincronizar manualmente. `firestore.indexes.json` documenta el índice compuesto confirmado (`orders`: `userId` + `createdAt`, sin el cual "Mis pedidos" falla en un proyecto de Firebase nuevo); si se agregan queries nuevas que Firestore pida indexar, hay que sumarlas ahí también.
 
 Las credenciales de AWS jamás salen de la Vercel Function (ver "Imágenes de producto" arriba); el `.env` nunca se subió al repo (está en `.gitignore`).
 
