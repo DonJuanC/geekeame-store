@@ -36,7 +36,7 @@ export function CartPage() {
     return (
       <div className={`min-h-screen ${isDark ? "bg-[#0f0e17] text-[#f5f3ff]" : "bg-white"}`}>
         <StoreHeader />
-        <div className="p-4 max-w-2xl mx-auto">
+        <main className="p-4 max-w-2xl mx-auto">
           {backLink}
           <div className="mt-6">
             <EmptyState
@@ -46,7 +46,7 @@ export function CartPage() {
               dark={isDark}
             />
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -54,7 +54,7 @@ export function CartPage() {
   return (
     <div className={`min-h-screen ${isDark ? "bg-[#0f0e17] text-[#f5f3ff]" : "bg-white"}`}>
       <StoreHeader />
-      <div className="p-4 max-w-2xl mx-auto">
+      <main className="p-4 max-w-2xl mx-auto">
         {backLink}
         <h1 className="text-xl font-bold my-4">Tu carrito</h1>
 
@@ -137,7 +137,7 @@ export function CartPage() {
         >
           Proceder al pago
         </Link>
-      </div>
+      </main>
     </div>
   );
 }

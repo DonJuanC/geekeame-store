@@ -63,7 +63,7 @@ export function OrderDetailPage() {
   const shell = (children: ReactNode) => (
     <div className={`min-h-screen ${isDark ? "bg-[#0f0e17] text-[#f5f3ff]" : "bg-white"}`}>
       <StoreHeader />
-      <div className="p-4 max-w-2xl mx-auto">{children}</div>
+      <main className="p-4 max-w-2xl mx-auto">{children}</main>
     </div>
   );
 

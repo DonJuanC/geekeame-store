@@ -57,19 +57,19 @@ export function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="p-4 max-w-2xl mx-auto">
+      <main className="p-4 max-w-2xl mx-auto">
         <Link to="/" className="text-sm underline">
           ← Volver al catálogo
         </Link>
         <p className="mt-6 text-center text-gray-500">
           Tu carrito está vacío, no hay nada que pagar.
         </p>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
+    <main className="p-4 max-w-2xl mx-auto">
       <Link to="/cart" className="text-sm underline">
         ← Volver al carrito
       </Link>
@@ -101,6 +101,6 @@ export function CheckoutPage() {
       >
         {status === "submitting" ? "Procesando..." : "Confirmar pedido"}
       </button>
-    </div>
+    </main>
   );
 }

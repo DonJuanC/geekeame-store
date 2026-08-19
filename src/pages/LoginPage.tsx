@@ -35,7 +35,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <main className="min-h-screen flex items-center justify-center p-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <h1 className="text-xl font-bold">Iniciar sesión</h1>
         {error && (
@@ -88,6 +88,6 @@ export function LoginPage() {
           </Link>
         </p>
       </form>
-    </div>
+    </main>
   );
 }

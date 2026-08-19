@@ -49,7 +49,11 @@ export function HomePage() {
 
       {isDefaultView && <HeroSection />}
 
-      <div className="p-4 max-w-5xl mx-auto">
+      {/* <main> en vez de <div>: ninguna página de cliente tenía landmark
+          semántico (comparar con AdminLayout, que sí usa <main>) -- un
+          usuario que navega por landmarks no tenía forma de saltar directo
+          al contenido principal. */}
+      <main className="p-4 max-w-5xl mx-auto">
         {isDefaultView && (
           <div className="mb-8">
             <CategoryTiles onSelect={setCategoryId} dark={isDark} />
@@ -102,6 +106,7 @@ export function HomePage() {
           <div className="flex gap-2 overflow-x-auto">
             <button
               onClick={() => setCategoryId(null)}
+              aria-pressed={categoryId === null}
               className={`rounded-full border px-3 py-1 text-sm whitespace-nowrap transition-colors ${
                 categoryId === null
                   ? "bg-[#7c3aed] border-[#7c3aed] text-white"
@@ -116,6 +121,7 @@ export function HomePage() {
               <button
                 key={c.id}
                 onClick={() => setCategoryId(c.id)}
+                aria-pressed={categoryId === c.id}
                 className={`rounded-full border px-3 py-1 text-sm whitespace-nowrap transition-colors ${
                   categoryId === c.id
                     ? "bg-[#7c3aed] border-[#7c3aed] text-white"
@@ -165,7 +171,7 @@ export function HomePage() {
             )}
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }

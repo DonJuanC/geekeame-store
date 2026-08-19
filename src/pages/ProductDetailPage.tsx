@@ -84,7 +84,7 @@ export function ProductDetailPage() {
   return (
     <div className={shellClass}>
       <StoreHeader />
-      <div className="p-4 max-w-2xl mx-auto">
+      <main className="p-4 max-w-2xl mx-auto">
         <Link
           to="/"
           className={`text-sm font-medium ${
@@ -134,7 +134,7 @@ export function ProductDetailPage() {
         </button>
 
         <ProductReviews productId={product.id} />
-      </div>
+      </main>
     </div>
   );
 }

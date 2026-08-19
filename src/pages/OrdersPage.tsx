@@ -54,7 +54,7 @@ export function OrdersPage() {
   return (
     <div className={`min-h-screen ${isDark ? "bg-[#0f0e17] text-[#f5f3ff]" : "bg-white"}`}>
       <StoreHeader />
-      <div className="p-4 max-w-2xl mx-auto">
+      <main className="p-4 max-w-2xl mx-auto">
         <Link
           to="/"
           className={`text-sm font-medium ${
@@ -111,7 +111,7 @@ export function OrdersPage() {
             ))}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

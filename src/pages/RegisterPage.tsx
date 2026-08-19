@@ -27,7 +27,7 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <main className="min-h-screen flex items-center justify-center p-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <h1 className="text-xl font-bold">Crear cuenta</h1>
         {error && (
@@ -73,6 +73,6 @@ export function RegisterPage() {
           </Link>
         </p>
       </form>
-    </div>
+    </main>
   );
 }

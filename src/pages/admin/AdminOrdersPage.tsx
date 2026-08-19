@@ -88,6 +88,7 @@ export function AdminOrdersPage() {
           <button
             key={f.value}
             onClick={() => setFilter(f.value)}
+            aria-pressed={filter === f.value}
             className={`rounded-full border px-3 py-1 transition-colors ${
               filter === f.value
                 ? "bg-[#7c3aed] border-[#7c3aed] text-white"
