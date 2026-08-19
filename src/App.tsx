@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "./components/layout/ScrollToTop";
 import { RequireAdmin } from "./components/auth/RequireAdmin";
@@ -11,11 +12,45 @@ import { CheckoutPage } from "./pages/CheckoutPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { OrderDetailPage } from "./pages/OrderDetailPage";
 import { FavoritesPage } from "./pages/FavoritesPage";
-import { AdminLayout } from "./pages/admin/AdminLayout";
-import { AdminProductsPage } from "./pages/admin/AdminProductsPage";
-import { AdminProductFormPage } from "./pages/admin/AdminProductFormPage";
-import { AdminOrdersPage } from "./pages/admin/AdminOrdersPage";
-import { AdminAnalyticsPage } from "./pages/admin/AdminAnalyticsPage";
+import { useTheme } from "./hooks/useTheme";
+import { LoadingState } from "./components/states/LoadingState";
+
+// Todo el panel admin en chunks aparte, cargados solo al navegar a /admin --
+// antes AdminAnalyticsPage y AdminProductFormPage (las páginas más pesadas
+// del proyecto) iban en el mismo bundle de 862KB que HomePage, aunque un
+// cliente normal nunca las visite. React.lazy espera un default export;
+// estas páginas usan named exports, de ahí el .then(...) de cada import.
+const AdminLayout = lazy(() =>
+  import("./pages/admin/AdminLayout").then((m) => ({ default: m.AdminLayout })),
+);
+const AdminProductsPage = lazy(() =>
+  import("./pages/admin/AdminProductsPage").then((m) => ({
+    default: m.AdminProductsPage,
+  })),
+);
+const AdminProductFormPage = lazy(() =>
+  import("./pages/admin/AdminProductFormPage").then((m) => ({
+    default: m.AdminProductFormPage,
+  })),
+);
+const AdminOrdersPage = lazy(() =>
+  import("./pages/admin/AdminOrdersPage").then((m) => ({
+    default: m.AdminOrdersPage,
+  })),
+);
+const AdminAnalyticsPage = lazy(() =>
+  import("./pages/admin/AdminAnalyticsPage").then((m) => ({
+    default: m.AdminAnalyticsPage,
+  })),
+);
+
+// Un solo Suspense envolviendo AdminLayout alcanza para las 4 sub-rutas
+// también: se renderizan vía <Outlet/> dentro de AdminLayout, así que
+// quedan dentro del mismo boundary sin necesitar uno propio cada una.
+function AdminFallback() {
+  const { theme } = useTheme();
+  return <LoadingState label="Cargando panel admin..." dark={theme === "dark"} />;
+}
 
 function App() {
   return (
@@ -63,7 +98,9 @@ function App() {
           path="/admin"
           element={
             <RequireAdmin>
-              <AdminLayout />
+              <Suspense fallback={<AdminFallback />}>
+                <AdminLayout />
+              </Suspense>
             </RequireAdmin>
           }
         >
