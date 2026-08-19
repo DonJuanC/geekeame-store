@@ -8,13 +8,47 @@ import { LoadingState } from "../components/states/LoadingState";
 import { EmptyState } from "../components/states/EmptyState";
 import { ErrorState } from "../components/states/ErrorState";
 import { PRODUCT_CATEGORIES } from "../constants/categories";
+import type { Product } from "../types/product";
 
-// Cantidad de productos en "Destacados": simple slice de los primeros N de
-// products (que en la vista por defecto ya vienen ordenados por
-// createdAt desc -- ver listProducts), no un flag de "featured" en
-// Firestore. No hay campo para eso todavía; esto es "recién llegados"
-// presentado como vitrina, no una curación manual.
+// Cantidad de productos en "Destacados". No hay flag de "featured" en
+// Firestore todavía, así que sigue siendo un recorte de "products" (vista
+// por defecto, ya ordenada por createdAt desc -- ver listProducts), no una
+// curación manual.
 const FEATURED_COUNT = 6;
+
+// Antes era un slice directo de los primeros FEATURED_COUNT: si varios
+// productos seguidos se habían cargado de la misma categoría (típico
+// después de un seed por lotes), "Destacados" terminaba siendo 6 productos
+// de una sola categoría en vez de una vitrina. Acá se toma como mucho un
+// producto por categoría en una primera pasada (el más reciente de cada
+// una, porque "products" ya viene ordenado por createdAt desc) y recién si
+// sobran cupos -- hay menos categorías que FEATURED_COUNT -- se completa
+// con los siguientes productos más recientes que todavía no entraron.
+export function pickFeaturedProducts(
+  products: Product[],
+  count: number,
+): Product[] {
+  const seenCategories = new Set<string>();
+  const featured: Product[] = [];
+
+  for (const product of products) {
+    if (featured.length >= count) break;
+    if (seenCategories.has(product.categoryId)) continue;
+    seenCategories.add(product.categoryId);
+    featured.push(product);
+  }
+
+  if (featured.length < count) {
+    const featuredIds = new Set(featured.map((p) => p.id));
+    for (const product of products) {
+      if (featured.length >= count) break;
+      if (featuredIds.has(product.id)) continue;
+      featured.push(product);
+    }
+  }
+
+  return featured;
+}
 
 export function HomePage() {
   const {
@@ -41,7 +75,7 @@ export function HomePage() {
   // ProductsContext.tsx). Se ocultan en vez de convivir con el resto para
   // no repetir productos dos veces en pantalla sin motivo.
   const isDefaultView = showLanding;
-  const featured = products.slice(0, FEATURED_COUNT);
+  const featured = pickFeaturedProducts(products, FEATURED_COUNT);
 
   return (
     <div className={`min-h-screen ${isDark ? "bg-[#0f0e17]" : "bg-white"}`}>
