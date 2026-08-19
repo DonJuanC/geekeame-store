@@ -84,7 +84,10 @@ export function ProductDetailPage() {
   return (
     <div className={shellClass}>
       <StoreHeader />
-      <main className="p-4 max-w-2xl mx-auto">
+      {/* max-w-2xl en mobile, md:max-w-4xl para dar espacio a las 2
+          columnas -- con max-w-2xl la columna de info quedaba angosta y
+          apretada en tablet/desktop. */}
+      <main className="p-4 max-w-2xl md:max-w-4xl mx-auto">
         <Link
           to="/"
           className={`text-sm font-medium ${
@@ -93,45 +96,56 @@ export function ProductDetailPage() {
         >
           ← Volver al catálogo
         </Link>
-        <div className="relative">
-          <ProductImage
-            product={product}
-            className="w-full aspect-square object-cover rounded-lg my-4"
-            emojiClassName="text-4xl"
-            dark={isDark}
-          />
-          <FavoriteButton productId={product.id} className="absolute top-6 right-2 z-10" />
+
+        {/* Antes era una sola columna estirada: la imagen cuadrada de
+            ~640px dominaba la pantalla con un solo emoji chico centrado,
+            empujando precio/CTA/reseñas muy por debajo del fold en
+            tablet/desktop. De md hacia arriba pasa a imagen + info lado a
+            lado; en mobile se queda apilado igual que antes. */}
+        <div className="mt-4 md:flex md:gap-8 md:items-start">
+          <div className="relative md:w-1/2">
+            <ProductImage
+              product={product}
+              className="w-full aspect-square object-cover rounded-lg"
+              emojiClassName="text-4xl"
+              dark={isDark}
+            />
+            <FavoriteButton productId={product.id} className="absolute top-2 right-2 z-10" />
+          </div>
+
+          <div className="mt-4 md:mt-0 md:w-1/2">
+            <span
+              className="inline-block text-xs font-medium uppercase tracking-wide rounded-full px-2 py-0.5"
+              style={{
+                backgroundColor: categoryTagColors(product.categoryId).bg,
+                color: categoryTagColors(product.categoryId).text,
+              }}
+            >
+              {categoryLabel(product.categoryId)}
+            </span>
+            <h1 className="text-xl font-bold mt-1">{themeName(product)}</h1>
+            <p className={isDark ? "text-[#9ca3af] my-2" : "text-gray-600 my-2"}>
+              {product.description}
+            </p>
+            <p className={`text-lg font-bold ${isDark ? "text-[#f9a8d4]" : "text-[#db2777]"}`}>
+              ${product.price.toLocaleString("es-CO")}
+            </p>
+            <button
+              onClick={() =>
+                addItem({
+                  productId: product.id,
+                  name: product.name,
+                  price: product.price,
+                  imageUrl: product.imageUrl,
+                  categoryId: product.categoryId,
+                })
+              }
+              className="rounded-full px-4 py-2.5 mt-3 font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors"
+            >
+              Agregar al carrito
+            </button>
+          </div>
         </div>
-        <span
-          className="inline-block text-xs font-medium uppercase tracking-wide rounded-full px-2 py-0.5 mt-1"
-          style={{
-            backgroundColor: categoryTagColors(product.categoryId).bg,
-            color: categoryTagColors(product.categoryId).text,
-          }}
-        >
-          {categoryLabel(product.categoryId)}
-        </span>
-        <h1 className="text-xl font-bold mt-1">{themeName(product)}</h1>
-        <p className={isDark ? "text-[#9ca3af] my-2" : "text-gray-600 my-2"}>
-          {product.description}
-        </p>
-        <p className={`text-lg font-bold ${isDark ? "text-[#f9a8d4]" : "text-[#db2777]"}`}>
-          ${product.price.toLocaleString("es-CO")}
-        </p>
-        <button
-          onClick={() =>
-            addItem({
-              productId: product.id,
-              name: product.name,
-              price: product.price,
-              imageUrl: product.imageUrl,
-              categoryId: product.categoryId,
-            })
-          }
-          className="rounded-full px-4 py-2.5 mt-3 font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors"
-        >
-          Agregar al carrito
-        </button>
 
         <ProductReviews productId={product.id} />
       </main>
