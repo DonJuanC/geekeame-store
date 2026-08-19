@@ -39,6 +39,7 @@ vi.mock("../services/authService", () => ({
   // "unauthenticated" para siempre.
   ensureUserProfile: vi.fn(),
   fetchUserProfile: vi.fn(),
+  sendPasswordReset: vi.fn(),
 }));
 
 import { onAuthStateChanged } from "firebase/auth";
@@ -138,6 +139,28 @@ describe("useAuth", () => {
       await result.current.signOut();
     });
 
+    expect(result.current.status).toBe("unauthenticated");
+    expect(result.current.user).toBeNull();
+  });
+
+  it("resetPassword delega en authService y no cambia el estado de sesión (edge case: no loguea a nadie)", async () => {
+    vi.mocked(onAuthStateChanged).mockImplementation((_auth, callback) => {
+      // @ts-expect-error firma simplificada del callback para el mock
+      callback(null);
+      return () => {};
+    });
+    vi.mocked(authService.sendPasswordReset).mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe("unauthenticated"));
+
+    await act(async () => {
+      await result.current.resetPassword("cliente@geekeame.test");
+    });
+
+    expect(authService.sendPasswordReset).toHaveBeenCalledWith(
+      "cliente@geekeame.test",
+    );
     expect(result.current.status).toBe("unauthenticated");
     expect(result.current.user).toBeNull();
   });

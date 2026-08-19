@@ -6,6 +6,7 @@ export interface AuthContextValue extends AuthState {
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 // El objeto de contexto vive acá (archivo .ts, sin componentes) en vez de

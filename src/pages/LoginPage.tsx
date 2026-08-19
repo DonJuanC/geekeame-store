@@ -3,13 +3,19 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 export function LoginPage() {
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, resetPassword } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  // "sent" no confirma que el email tenga cuenta -- Firebase no lo revela
+  // (ver sendPasswordReset en authService), así que el mensaje es el mismo
+  // exista o no la cuenta, para no permitir enumerar usuarios registrados.
+  const [resetStatus, setResetStatus] = useState<
+    "idle" | "sending" | "sent" | "error"
+  >("idle");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -22,6 +28,21 @@ export function LoginPage() {
       setError("No pudimos iniciar sesión. Revisa tu email y contraseña");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleResetPassword() {
+    if (!email) {
+      setError("Escribe tu email arriba y vuelve a intentar.");
+      return;
+    }
+    setError(null);
+    setResetStatus("sending");
+    try {
+      await resetPassword(email);
+      setResetStatus("sent");
+    } catch {
+      setResetStatus("error");
     }
   }
 
@@ -75,6 +96,29 @@ export function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           className="w-full border rounded p-2"
         />
+
+        <div className="text-right -mt-2">
+          <button
+            type="button"
+            onClick={handleResetPassword}
+            disabled={resetStatus === "sending"}
+            className="text-sm underline disabled:opacity-50"
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        </div>
+        {resetStatus === "sent" && (
+          <p role="status" className="text-sm text-gray-600">
+            Si ese email tiene una cuenta, te enviamos un link para restablecer
+            la contraseña. Revisa también spam.
+          </p>
+        )}
+        {resetStatus === "error" && (
+          <p role="alert" className="text-red-600 text-sm">
+            No pudimos enviar el email. Intenta de nuevo en un momento.
+          </p>
+        )}
+
         <button
           type="submit"
           disabled={isSubmitting}

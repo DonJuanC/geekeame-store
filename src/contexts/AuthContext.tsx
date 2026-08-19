@@ -6,6 +6,7 @@ import {
   signUp as signUpService,
   signInWithGoogle as signInWithGoogleService,
   signOut as signOutService,
+  sendPasswordReset as sendPasswordResetService,
   ensureUserProfile,
 } from "../services/authService";
 import type { AuthState } from "../types/auth";
@@ -65,9 +66,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }
 
+  // No toca "state": pedir el link de recuperación no cambia la sesión
+  // actual (ni loguea a nadie), solo dispara el email desde Firebase.
+  async function resetPassword(email: string) {
+    await sendPasswordResetService(email);
+  }
+
   return (
     <AuthContext.Provider
-      value={{ ...state, signIn, signUp, signInWithGoogle, signOut }}
+      value={{
+        ...state,
+        signIn,
+        signUp,
+        signInWithGoogle,
+        signOut,
+        resetPassword,
+      }}
     >
       {children}
     </AuthContext.Provider>

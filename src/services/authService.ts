@@ -4,6 +4,7 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
@@ -71,6 +72,14 @@ export async function signInWithGoogle(): Promise<UserProfile> {
 
 export async function signOut(): Promise<void> {
   await firebaseSignOut(auth);
+}
+
+// Firebase no distingue en la respuesta si el email tiene cuenta o no --
+// eso evita que este formulario se use para enumerar cuentas registradas.
+// El mensaje que ve el usuario en LoginPage es siempre el mismo, exista o
+// no la cuenta.
+export async function sendPasswordReset(email: string): Promise<void> {
+  await sendPasswordResetEmail(auth, email);
 }
 
 export async function fetchUserProfile(
