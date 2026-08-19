@@ -54,6 +54,12 @@ export function HomePage() {
           usuario que navega por landmarks no tenía forma de saltar directo
           al contenido principal. */}
       <main className="p-4 max-w-5xl mx-auto">
+        {/* Sin esto, al buscar/filtrar no quedaba ningún heading en pantalla
+            -- ni el h1 del hero ni el h2 "Destacados" se montan fuera de la
+            vista landing. Solo cuando NO es landing: el hero ya trae su
+            propio h1, y tener dos sería redundante. */}
+        {!isDefaultView && <h1 className="sr-only">Catálogo</h1>}
+
         {isDefaultView && (
           <div className="mb-8">
             <CategoryTiles onSelect={setCategoryId} dark={isDark} />
@@ -94,6 +100,7 @@ export function HomePage() {
         <div id="catalogo" className="flex flex-col sm:flex-row gap-3 mb-6 scroll-mt-20">
           <input
             type="search"
+            aria-label="Buscar productos"
             placeholder="Buscar por nombre..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
@@ -143,7 +150,21 @@ export function HomePage() {
           <ErrorState message={error ?? "Algo salió mal."} dark={isDark} />
         )}
         {status === "idle" && products.length === 0 && (
-          <EmptyState message="No encontramos productos que coincidan." dark={isDark} />
+          <EmptyState
+            message="No encontramos productos que coincidan."
+            actionLabel={
+              categoryId !== null || searchInput !== "" ? "Limpiar filtros" : undefined
+            }
+            onAction={
+              categoryId !== null || searchInput !== ""
+                ? () => {
+                    setCategoryId(null);
+                    setSearchInput("");
+                  }
+                : undefined
+            }
+            dark={isDark}
+          />
         )}
         {status === "idle" && products.length > 0 && (
           <>
@@ -163,7 +184,7 @@ export function HomePage() {
                 <button
                   onClick={loadMore}
                   disabled={isLoadingMore}
-                  className="rounded-full bg-[#7c3aed] px-5 py-2 text-sm font-medium text-white hover:bg-[#6d28d9] disabled:opacity-50 transition-colors"
+                  className="rounded-full bg-[#7c3aed] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#6d28d9] disabled:opacity-50 transition-colors"
                 >
                   {isLoadingMore ? "Cargando..." : "Cargar más"}
                 </button>

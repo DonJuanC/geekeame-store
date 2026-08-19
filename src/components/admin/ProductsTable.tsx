@@ -15,7 +15,7 @@ function ProductRow({ product, isDeleting, onDelete, dark }: ProductRowProps) {
       <td className="p-2">
         <ProductImage
           product={product}
-          className="w-12 h-12 object-cover rounded"
+          className="w-12 h-12 object-cover rounded-lg"
           emojiClassName="text-base"
           dark={dark}
         />

@@ -38,7 +38,10 @@ export function AdminOrdersPage() {
         setOrders(result);
         setStatus("idle");
       })
-      .catch(() => setStatus("error"));
+      .catch((err) => {
+        console.error(err);
+        setStatus("error");
+      });
   }, []);
 
   useEffect(() => {

@@ -9,6 +9,7 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -25,12 +26,19 @@ export function LoginPage() {
   }
 
   async function handleGoogle() {
+    // A diferencia del login por email (que ya usaba isSubmitting), este
+    // botón no se deshabilitaba durante la operación -- un doble click
+    // podía abrir dos popups de Google a la vez.
+    if (isGoogleSubmitting) return;
     setError(null);
+    setIsGoogleSubmitting(true);
     try {
       await signInWithGoogle();
       navigate("/");
     } catch {
       setError("No pudimos iniciar sesión con Google.");
+    } finally {
+      setIsGoogleSubmitting(false);
     }
   }
 
@@ -77,9 +85,10 @@ export function LoginPage() {
         <button
           type="button"
           onClick={handleGoogle}
-          className="w-full border rounded p-2"
+          disabled={isGoogleSubmitting}
+          className="w-full border rounded p-2 disabled:opacity-50"
         >
-          Continuar con Google
+          {isGoogleSubmitting ? "Conectando..." : "Continuar con Google"}
         </button>
         <p className="text-sm text-center">
           ¿No tienes cuenta?{" "}

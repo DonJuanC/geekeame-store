@@ -88,7 +88,7 @@ export function OrdersPage() {
               <Link
                 key={order.id}
                 to={`/orders/${order.id}`}
-                className={`rounded-xl border p-3 transition-colors ${
+                className={`rounded-xl border p-3 transition-all hover:-translate-y-0.5 ${
                   isDark
                     ? "bg-[#1c1a29] border-[#2e2a45] hover:border-[#7c3aed]"
                     : "border-[#ede9fe] hover:bg-[#f5f3ff]"

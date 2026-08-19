@@ -16,6 +16,7 @@ import { uploadProductImage } from "../../services/uploadService";
 import { PRODUCT_CATEGORIES } from "../../constants/categories";
 import type { ProductCategoryId } from "../../types/product";
 import { ErrorState } from "../../components/states/ErrorState";
+import { LoadingState } from "../../components/states/LoadingState";
 
 type FormFields = {
   name: string;
@@ -255,7 +256,9 @@ export function AdminProductFormPage() {
   );
 
   if (isLoadingProduct) {
-    return <p className={isDark ? "text-[#9ca3af]" : "text-gray-500"}>Cargando producto…</p>;
+    // LoadingState en vez del <p> a mano: era el único lugar del panel
+    // admin que no reusaba el componente compartido.
+    return <LoadingState label="Cargando producto…" dark={isDark} />;
   }
 
   if (status === "error") {
@@ -304,9 +307,15 @@ export function AdminProductFormPage() {
             disabled={isSubmitting}
             onChange={(e) => setField("name", e.target.value)}
             onBlur={() => handleBlur("name")}
+            aria-invalid={Boolean(errors.name)}
+            aria-describedby={errors.name ? "name-error" : undefined}
             className={inputClass}
           />
-          {errors.name && <p className={errorClass}>{errors.name}</p>}
+          {errors.name && (
+            <p id="name-error" className={errorClass}>
+              {errors.name}
+            </p>
+          )}
         </div>
 
         <div>
@@ -321,6 +330,8 @@ export function AdminProductFormPage() {
               setField("categoryId", e.target.value as ProductCategoryId)
             }
             onBlur={() => handleBlur("categoryId")}
+            aria-invalid={Boolean(errors.categoryId)}
+            aria-describedby={errors.categoryId ? "categoryId-error" : undefined}
             className={inputClass}
           >
             <option value="">Elige una categoría</option>
@@ -330,7 +341,11 @@ export function AdminProductFormPage() {
               </option>
             ))}
           </select>
-          {errors.categoryId && <p className={errorClass}>{errors.categoryId}</p>}
+          {errors.categoryId && (
+            <p id="categoryId-error" className={errorClass}>
+              {errors.categoryId}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
@@ -347,9 +362,15 @@ export function AdminProductFormPage() {
               disabled={isSubmitting}
               onChange={(e) => setField("price", e.target.value)}
               onBlur={() => handleBlur("price")}
+              aria-invalid={Boolean(errors.price)}
+              aria-describedby={errors.price ? "price-error" : undefined}
               className={inputClass}
             />
-            {errors.price && <p className={errorClass}>{errors.price}</p>}
+            {errors.price && (
+              <p id="price-error" className={errorClass}>
+                {errors.price}
+              </p>
+            )}
           </div>
 
           <div className="flex-1">
@@ -364,9 +385,15 @@ export function AdminProductFormPage() {
               disabled={isSubmitting}
               onChange={(e) => setField("stock", e.target.value)}
               onBlur={() => handleBlur("stock")}
+              aria-invalid={Boolean(errors.stock)}
+              aria-describedby={errors.stock ? "stock-error" : undefined}
               className={inputClass}
             />
-            {errors.stock && <p className={errorClass}>{errors.stock}</p>}
+            {errors.stock && (
+              <p id="stock-error" className={errorClass}>
+                {errors.stock}
+              </p>
+            )}
           </div>
         </div>
 
@@ -380,6 +407,8 @@ export function AdminProductFormPage() {
             accept={ALLOWED_IMAGE_TYPES.join(",")}
             disabled={isSubmitting}
             onChange={handleImageChange}
+            aria-invalid={Boolean(errors.imageUrl || (imageStatus === "error" && imageUploadError))}
+            aria-describedby={errors.imageUrl ? "imageUrl-error" : undefined}
             className={inputClass}
           />
           {imageStatus === "uploading" && (
@@ -388,9 +417,15 @@ export function AdminProductFormPage() {
             </p>
           )}
           {imageStatus === "error" && imageUploadError && (
-            <p className={errorClass}>{imageUploadError}</p>
+            <p role="alert" className={errorClass}>
+              {imageUploadError}
+            </p>
           )}
-          {errors.imageUrl && <p className={errorClass}>{errors.imageUrl}</p>}
+          {errors.imageUrl && (
+            <p id="imageUrl-error" className={errorClass}>
+              {errors.imageUrl}
+            </p>
+          )}
           {fields.imageUrl && (
             <img
               src={fields.imageUrl}
@@ -410,10 +445,16 @@ export function AdminProductFormPage() {
             disabled={isSubmitting}
             onChange={(e) => setField("description", e.target.value)}
             onBlur={() => handleBlur("description")}
+            aria-invalid={Boolean(errors.description)}
+            aria-describedby={errors.description ? "description-error" : undefined}
             className={inputClass}
             rows={4}
           />
-          {errors.description && <p className={errorClass}>{errors.description}</p>}
+          {errors.description && (
+            <p id="description-error" className={errorClass}>
+              {errors.description}
+            </p>
+          )}
         </div>
 
         {globalError && (

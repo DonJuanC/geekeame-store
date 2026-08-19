@@ -75,7 +75,10 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
         setReviews(result);
         setStatus("idle");
       })
-      .catch(() => setStatus("error"));
+      .catch((err) => {
+        console.error(err);
+        setStatus("error");
+      });
   }, [productId]);
 
   useEffect(() => {
@@ -107,7 +110,8 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       });
       setSubmitStatus("idle");
       fetchReviews();
-    } catch {
+    } catch (err) {
+      console.error(err);
       setSubmitStatus("error");
       setSubmitError("No pudimos guardar tu reseña. Intenta de nuevo.");
     }
@@ -201,6 +205,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
+                aria-label="Comentario de tu reseña"
                 placeholder="¿Qué te pareció el producto? (opcional)"
                 className={`rounded-lg p-2 text-sm border focus:outline-none focus:ring-2 focus:ring-[#c4b5fd] ${
                   isDark ? "bg-[#161320] border-[#2e2a45] text-[#f5f3ff]" : borderColor
@@ -218,7 +223,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
               <button
                 type="submit"
                 disabled={rating === 0 || submitStatus === "submitting"}
-                className="rounded-full px-4 py-2 text-sm font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] disabled:opacity-50 self-start transition-colors"
+                className="rounded-full px-4 py-2.5 text-sm font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] disabled:opacity-50 self-start transition-colors"
               >
                 {submitStatus === "submitting"
                   ? "Guardando..."

@@ -35,7 +35,10 @@ export function AdminProductsPage() {
         setProducts(result);
         setStatus("idle");
       })
-      .catch(() => setStatus("error"));
+      .catch((err) => {
+        console.error(err);
+        setStatus("error");
+      });
   }, []);
 
   useEffect(() => {
@@ -76,7 +79,7 @@ export function AdminProductsPage() {
         <h1 className="text-xl font-bold">Productos</h1>
         <Link
           to="/admin/products/new"
-          className="rounded-full px-3 py-1.5 text-sm font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors"
+          className="rounded-full px-3 py-2 text-sm font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors"
         >
           + Nuevo producto
         </Link>

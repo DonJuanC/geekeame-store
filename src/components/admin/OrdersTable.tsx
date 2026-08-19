@@ -26,6 +26,7 @@ function OrderRow({ order, isUpdating, onStatusChange, dark }: OrderRowProps) {
         <select
           value={order.status}
           disabled={isUpdating}
+          aria-label={`Cambiar estado del pedido ${order.id.slice(0, 8)}`}
           onChange={(e) =>
             onStatusChange(order, e.target.value as OrderStatus)
           }

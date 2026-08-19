@@ -39,7 +39,10 @@ export function AdminAnalyticsPage() {
         setProducts(productsResult);
         setStatus("idle");
       })
-      .catch(() => setStatus("error"));
+      .catch((err) => {
+        console.error(err);
+        setStatus("error");
+      });
   }, []);
 
   useEffect(() => {
@@ -70,7 +73,7 @@ export function AdminAnalyticsPage() {
 
   const cardClass = `rounded-xl border p-4 ${isDark ? "bg-[#1c1a29] border-[#2e2a45]" : "border-[#ede9fe]"}`;
   const mutedText = isDark ? "text-[#9ca3af]" : "text-gray-500";
-  const borderColor = isDark ? "border-[#2e2a45]" : "";
+  const borderColor = isDark ? "border-[#2e2a45]" : "border-[#ede9fe]";
   const pillClass = `rounded-full border px-3 py-1 ${isDark ? "border-[#3f3a5c]" : "border-[#ddd6fe]"}`;
 
   return (

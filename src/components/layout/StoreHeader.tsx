@@ -78,7 +78,7 @@ export function StoreHeader() {
             onClick={toggleTheme}
             aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
             title={isDark ? "Modo claro" : "Modo oscuro"}
-            className={`rounded-full border w-8 h-8 flex items-center justify-center transition-colors ${
+            className={`rounded-full border w-9 h-9 flex items-center justify-center transition-colors ${
               isDark
                 ? "border-[#3f3a5c] text-[#c4b5fd] hover:bg-[#211d34]"
                 : "border-[#ddd6fe] hover:bg-[#f5f3ff]"
@@ -168,7 +168,7 @@ export function StoreHeader() {
             // los botones reales para no saltar el layout cuando resuelve.
             <div
               aria-hidden="true"
-              className={`rounded-full w-28 h-8 animate-pulse ${
+              className={`rounded-full w-28 h-9 animate-pulse ${
                 isDark ? "bg-[#2e2a45]" : "bg-[#ede9fe]"
               }`}
             />
@@ -187,7 +187,7 @@ export function StoreHeader() {
                 className={`rounded-full border pl-3 pr-3.5 py-1.5 flex items-center gap-1.5 transition-colors ${
                   isDark
                     ? "border-[#3f3a5c] text-[#c4b5fd] hover:bg-[#211d34]"
-                    : "border-gray-200 hover:bg-gray-50"
+                    : "border-[#ddd6fe] hover:bg-[#f5f3ff]"
                 }`}
               >
                 <span className="text-base" aria-hidden="true">

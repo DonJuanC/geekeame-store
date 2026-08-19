@@ -45,13 +45,16 @@ export function StarRating({
   }
 
   return (
-    <span className={`${sizeClass} leading-none`} role="radiogroup" aria-label="Calificación">
+    // role="group" con botones simples, no "radiogroup": ese rol implica el
+    // patrón de teclado con flechas + roving tabindex, que acá no está
+    // implementado (cada estrella es un tab-stop normal). Mejor un grupo
+    // simple que anunciar un patrón que no se cumple.
+    <span className={`${sizeClass} leading-none`} role="group" aria-label="Calificación">
       {STARS.map((star) => (
         <button
           key={star}
           type="button"
-          role="radio"
-          aria-checked={star === value}
+          aria-pressed={star <= value}
           aria-label={`${star} estrella${star > 1 ? "s" : ""}`}
           onClick={() => onChange?.(star)}
           className={

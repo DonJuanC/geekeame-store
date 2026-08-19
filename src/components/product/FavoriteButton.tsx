@@ -31,7 +31,7 @@ export function FavoriteButton({ productId, className = "" }: FavoriteButtonProp
         title="Inicia sesión para guardar favoritos"
         aria-label="Inicia sesión para guardar favoritos"
         onClick={(e) => e.stopPropagation()}
-        className={`rounded-full w-8 h-8 flex items-center justify-center text-lg transition-transform hover:scale-110 ${
+        className={`rounded-full w-9 h-9 flex items-center justify-center text-lg transition-transform hover:scale-110 ${
           isDark ? "bg-[#161320]/80" : "bg-white/80"
         } ${className}`}
       >
@@ -78,7 +78,7 @@ export function FavoriteButton({ productId, className = "" }: FavoriteButtonProp
         disabled={pending}
         aria-label={favorited ? "Quitar de favoritos" : "Agregar a favoritos"}
         title={favorited ? "En tus favoritos" : "Agregar a favoritos"}
-        className={`rounded-full w-8 h-8 flex items-center justify-center text-lg transition-transform hover:scale-110 disabled:opacity-60 ${
+        className={`rounded-full w-9 h-9 flex items-center justify-center text-lg transition-transform hover:scale-110 disabled:opacity-60 ${
           isDark ? "bg-[#161320]/80" : "bg-white/80"
         }`}
       >

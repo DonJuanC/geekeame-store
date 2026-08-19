@@ -30,7 +30,8 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         setList(result);
         setStatus("idle");
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(err);
         setError("No pudimos cargar tus favoritos.");
         setStatus("error");
       });

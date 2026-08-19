@@ -67,7 +67,7 @@ export function FavoritesPage() {
             {products.map((product) => (
               <div
                 key={product.id}
-                className={`relative rounded-lg border overflow-hidden ${
+                className={`relative rounded-xl border overflow-hidden ${
                   isDark ? "border-[#2e2a45]" : "border-[#ede9fe]"
                 }`}
               >
@@ -75,7 +75,7 @@ export function FavoritesPage() {
                   onClick={() => toggleFavorite(product.id)}
                   title="Quitar de favoritos"
                   aria-label={`Quitar ${themeName(product)} de favoritos`}
-                  className={`absolute top-1 right-1 z-10 rounded-full w-6 h-6 flex items-center justify-center text-xs ${
+                  className={`absolute top-1 right-1 z-10 rounded-full w-9 h-9 flex items-center justify-center text-xs ${
                     isDark ? "bg-[#161320]/90 text-[#f5f3ff]" : "bg-white/90"
                   }`}
                 >

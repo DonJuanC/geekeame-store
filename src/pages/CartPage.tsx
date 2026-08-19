@@ -82,7 +82,7 @@ export function CartPage() {
                   <button
                     onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                     aria-label="Restar uno"
-                    className={`rounded-full border w-7 h-7 flex items-center justify-center transition-colors ${
+                    className={`rounded-full border w-9 h-9 flex items-center justify-center transition-colors ${
                       isDark
                         ? "border-[#3f3a5c] hover:bg-[#211d34]"
                         : "border-[#ddd6fe] hover:bg-[#f5f3ff]"
@@ -94,7 +94,7 @@ export function CartPage() {
                   <button
                     onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                     aria-label="Sumar uno"
-                    className={`rounded-full border w-7 h-7 flex items-center justify-center transition-colors ${
+                    className={`rounded-full border w-9 h-9 flex items-center justify-center transition-colors ${
                       isDark
                         ? "border-[#3f3a5c] hover:bg-[#211d34]"
                         : "border-[#ddd6fe] hover:bg-[#f5f3ff]"

@@ -42,8 +42,9 @@ export function ProductDetailPage() {
         setProduct(p);
         setStatus("idle");
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
+        console.error(err);
         setLoadedId(id);
         setStatus("error");
       });

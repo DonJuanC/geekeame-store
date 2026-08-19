@@ -11,6 +11,10 @@ export function CheckoutPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  // "Ya no hay stock suficiente..." (ver ordersService.createOrder) explica
+  // qué pasó pero no daba un camino directo de vuelta al carrito -- el
+  // usuario tenía que adivinar que hay que ir a ajustar cantidades.
+  const [isStockError, setIsStockError] = useState(false);
 
   async function handleConfirm() {
     if (!user || status === "submitting") return;
@@ -20,11 +24,13 @@ export function CheckoutPage() {
     if (!navigator.onLine) {
       setStatus("error");
       setError("Estás sin conexión. Conéctate a internet e intenta de nuevo.");
+      setIsStockError(false);
       return;
     }
 
     setStatus("submitting");
     setError(null);
+    setIsStockError(false);
 
     const orderItems: OrderItemSnapshot[] = items.map((item) => ({
       productId: item.productId,
@@ -48,9 +54,10 @@ export function CheckoutPage() {
           "Esto está tardando más de lo normal. Revisa tu conexión: si el pedido no aparece en \"Mis pedidos\" en un momento, puedes intentar de nuevo.",
         );
       } else {
-        setError(
-          err instanceof Error ? err.message : "No pudimos procesar tu pedido.",
-        );
+        const message =
+          err instanceof Error ? err.message : "No pudimos procesar tu pedido.";
+        setError(message);
+        setIsStockError(message.toLowerCase().includes("stock"));
       }
     }
   }
@@ -89,9 +96,16 @@ export function CheckoutPage() {
       </p>
 
       {status === "error" && (
-        <p role="alert" className="text-red-600 text-sm mt-3">
-          {error}
-        </p>
+        <div className="mt-3">
+          <p role="alert" className="text-red-600 text-sm">
+            {error}
+          </p>
+          {isStockError && (
+            <Link to="/cart" className="text-sm underline text-[#6d28d9]">
+              Ajustar cantidades en el carrito
+            </Link>
+          )}
+        </div>
       )}
 
       <button
