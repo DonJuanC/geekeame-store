@@ -22,6 +22,7 @@ export function FavoriteButton({ productId, className = "" }: FavoriteButtonProp
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [pending, setPending] = useState(false);
+  const [toggleError, setToggleError] = useState<string | null>(null);
 
   if (!user) {
     return (
@@ -46,25 +47,44 @@ export function FavoriteButton({ productId, className = "" }: FavoriteButtonProp
     e.stopPropagation();
     if (pending) return;
     setPending(true);
+    setToggleError(null);
     try {
       await toggleFavorite(productId);
+    } catch (err) {
+      // Antes esto fallaba en silencio: el corazón volvía a su estado
+      // normal sin ningún aviso, así que el usuario no sabía si el toggle
+      // no hizo nada o si tenía que reintentar. `className` (posicionamiento
+      // del caller) se movió al wrapper para poder anclar este mensaje al
+      // mismo punto sin romper el layout absolute de ProductCard/DetailPage.
+      console.error(err);
+      setToggleError("No se pudo actualizar. Intenta de nuevo.");
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={pending}
-      aria-label={favorited ? "Quitar de favoritos" : "Agregar a favoritos"}
-      title={favorited ? "En tus favoritos" : "Agregar a favoritos"}
-      className={`rounded-full w-8 h-8 flex items-center justify-center text-lg transition-transform hover:scale-110 disabled:opacity-60 ${
-        isDark ? "bg-[#161320]/80" : "bg-white/80"
-      } ${className}`}
-    >
-      {favorited ? "❤️" : "🤍"}
-    </button>
+    <span className={`relative inline-block ${className}`}>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={pending}
+        aria-label={favorited ? "Quitar de favoritos" : "Agregar a favoritos"}
+        title={favorited ? "En tus favoritos" : "Agregar a favoritos"}
+        className={`rounded-full w-8 h-8 flex items-center justify-center text-lg transition-transform hover:scale-110 disabled:opacity-60 ${
+          isDark ? "bg-[#161320]/80" : "bg-white/80"
+        }`}
+      >
+        {favorited ? "❤️" : "🤍"}
+      </button>
+      {toggleError && (
+        <span
+          role="alert"
+          className="absolute top-full right-0 mt-1 whitespace-nowrap text-[10px] rounded-md px-2 py-1 bg-red-600 text-white shadow-lg z-20"
+        >
+          {toggleError}
+        </span>
+      )}
+    </span>
   );
 }

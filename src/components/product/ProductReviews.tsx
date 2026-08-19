@@ -208,7 +208,10 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                 rows={3}
               />
               {submitStatus === "error" && (
-                <p className={`text-sm ${isDark ? "text-[#f87171]" : "text-red-600"}`}>
+                <p
+                  role="alert"
+                  className={`text-sm ${isDark ? "text-[#f87171]" : "text-red-600"}`}
+                >
                   {submitError}
                 </p>
               )}

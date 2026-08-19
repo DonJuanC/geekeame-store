@@ -83,7 +83,12 @@ export function AdminProductsPage() {
       </div>
 
       {actionError && (
-        <p className={isDark ? "text-[#f87171] text-sm" : "text-red-600 text-sm"}>{actionError}</p>
+        <p
+          role="alert"
+          className={isDark ? "text-[#f87171] text-sm" : "text-red-600 text-sm"}
+        >
+          {actionError}
+        </p>
       )}
 
       {status === "loading" && <ProductsTableSkeleton dark={isDark} />}

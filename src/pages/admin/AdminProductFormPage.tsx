@@ -77,14 +77,15 @@ function validate(fields: FormFields): FormErrors {
   return errors;
 }
 
-function friendlyError(err: unknown): string {
+function friendlyError(
+  err: unknown,
+  fallback = "Ocurrió un error al guardar el producto. Intenta de nuevo.",
+): string {
   const code = (err as { code?: string })?.code;
   if (code === "permission-denied") {
     return "No tienes permisos para esta acción. Si crees que es un error, vuelve a iniciar sesión o consulta al administrador.";
   }
-  return err instanceof Error
-    ? err.message
-    : "Ocurrió un error al guardar el producto. Intenta de nuevo.";
+  return err instanceof Error ? err.message : fallback;
 }
 
 export function AdminProductFormPage() {
@@ -133,11 +134,21 @@ export function AdminProductFormPage() {
         });
         setStatus("editing");
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
+        console.error(err);
         setLoadedId(targetId);
         setStatus("error");
-        setGlobalError(friendlyError(null));
+        // friendlyError(null) antes: nunca detectaba permission-denied, y el
+        // mensaje fijo hablaba de "guardar" cuando en realidad esto pasa al
+        // *cargar* el producto -- confuso para un admin que, por ejemplo, no
+        // tiene permisos o abre un producto ya borrado.
+        setGlobalError(
+          friendlyError(
+            err,
+            "Ocurrió un error al cargar el producto. Intenta de nuevo.",
+          ),
+        );
       });
     return () => {
       cancelled = true;
@@ -405,7 +416,14 @@ export function AdminProductFormPage() {
           {errors.description && <p className={errorClass}>{errors.description}</p>}
         </div>
 
-        {globalError && <p className={isDark ? "text-[#f87171] text-sm" : "text-red-600 text-sm"}>{globalError}</p>}
+        {globalError && (
+          <p
+            role="alert"
+            className={isDark ? "text-[#f87171] text-sm" : "text-red-600 text-sm"}
+          >
+            {globalError}
+          </p>
+        )}
 
         <button
           type="submit"

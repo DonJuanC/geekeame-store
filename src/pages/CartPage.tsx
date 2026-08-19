@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../hooks/useCart";
 import { useTheme } from "../hooks/useTheme";
 import { StoreHeader } from "../components/layout/StoreHeader";
@@ -9,6 +9,17 @@ export function CartPage() {
   const { items, total, updateQuantity, removeItem, clearCart } = useCart();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const navigate = useNavigate();
+
+  function handleClearCart() {
+    // A diferencia de "Eliminar producto" en el admin, esto corría en un
+    // solo click sin confirmación -- un click accidental vaciaba el
+    // carrito completo sin poder deshacer.
+    const confirmed = window.confirm(
+      "¿Vaciar el carrito? Se eliminarán todos los productos.",
+    );
+    if (confirmed) clearCart();
+  }
 
   const backLink = (
     <Link
@@ -28,7 +39,12 @@ export function CartPage() {
         <div className="p-4 max-w-2xl mx-auto">
           {backLink}
           <div className="mt-6">
-            <EmptyState message="Tu carrito está vacío." dark={isDark} />
+            <EmptyState
+              message="Tu carrito está vacío. Agrega productos desde el catálogo para verlos aquí."
+              actionLabel="Ir al catálogo"
+              onAction={() => navigate("/")}
+              dark={isDark}
+            />
           </div>
         </div>
       </div>
@@ -109,7 +125,7 @@ export function CartPage() {
             Total: ${total.toLocaleString("es-CO")}
           </p>
           <button
-            onClick={clearCart}
+            onClick={handleClearCart}
             className={`text-sm underline ${isDark ? "text-[#9ca3af]" : "text-gray-600"}`}
           >
             Vaciar carrito

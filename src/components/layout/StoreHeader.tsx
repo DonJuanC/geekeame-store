@@ -148,9 +148,13 @@ export function StoreHeader() {
           {user?.role === "admin" && (
             <Link
               to="/admin"
-              className="rounded-full px-3 py-1 font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors"
+              aria-label="Panel admin"
+              className="rounded-full pl-3 pr-3.5 py-1.5 flex items-center gap-1.5 font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors"
             >
-              Panel admin
+              <span className="text-base" aria-hidden="true">
+                ⚙️
+              </span>
+              <span className="hidden sm:inline">Panel admin</span>
             </Link>
           )}
 
@@ -179,10 +183,20 @@ export function StoreHeader() {
               </button>
             </div>
           ) : (
+            // Violeta (#7c3aed), no magenta: en todo el resto del sitio el
+            // violeta es "acción principal" (Confirmar pedido, Agregar al
+            // carrito, Ingresar, Crear producto) y el magenta es "acento"
+            // (precio, badge). El CTA más visible para un visitante sin
+            // sesión no debería romper esa convención justo en el punto de
+            // conversión más importante del header.
             <Link
               to="/login"
-              className="rounded-full bg-[#db2777] px-4 py-1.5 font-medium text-white hover:bg-[#be185d] transition-colors"
+              aria-label="Iniciar sesión"
+              className="rounded-full pl-3 pr-4 py-1.5 flex items-center gap-1.5 font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors"
             >
+              <span className="text-base" aria-hidden="true">
+                👤
+              </span>
               Iniciar sesión
             </Link>
           )}
