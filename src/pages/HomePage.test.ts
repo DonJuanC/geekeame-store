@@ -1,12 +1,27 @@
-import { describe, expect, it } from "vitest";
-import { pickFeaturedProducts } from "./HomePage";
+import { describe, expect, it, vi } from "vitest";
 import type { Product } from "../types/product";
 
-// "Destacados" mostraba los primeros N productos por fecha sin importar la
-// categoría -- si varios seguidos eran de la misma categoría (típico tras
-// un seed por lotes), la vitrina quedaba repetida. pickFeaturedProducts
-// prioriza variedad: como mucho un producto por categoría en la primera
-// pasada, y solo completa con repetidos si sobran cupos.
+// Solo se testea la función pura interleaveByCategory acá -- pero
+// importar "./HomePage" arrastra "../services/productsService", que a su
+// vez inicializa Firebase de verdad (getAuth/getFirestore) al importarse.
+// Sin mockear eso, el archivo entero falla al cargar en el entorno de test
+// (sin credenciales reales) antes de llegar a ningún test. vi.mock se
+// hoistea arriba de los imports normales, así que el import de abajo ya
+// recibe la versión mockeada.
+vi.mock("../services/productsService", () => ({
+  listFeaturedCandidates: vi.fn().mockResolvedValue([]),
+}));
+
+import { interleaveByCategory } from "./HomePage";
+
+// Bug real en producción: Destacados se armaba con un slice de los
+// productos más recientes SIN filtro de categoría -- si esa página no
+// incluía pines/stickers/posters (porque las últimas cargas del catálogo
+// fueron todas llaveros/tazas), la vitrina terminaba siendo 5 tazas y 1
+// llavero. El fix trae lo más reciente de CADA categoría por separado
+// (listFeaturedCandidates) y interleaveByCategory decide cómo combinarlas:
+// alternando entre categorías ronda por ronda, no agotando una antes de
+// pasar a la siguiente.
 
 function makeProduct(overrides: Partial<Product> = {}): Product {
   return {
@@ -23,56 +38,75 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
   };
 }
 
-describe("pickFeaturedProducts", () => {
-  it("con productos de categorías distintas, elige el más reciente de cada una", () => {
-    const products = [
-      makeProduct({ id: "p_1", categoryId: "pines", createdAt: 5 }),
-      makeProduct({ id: "p_2", categoryId: "tazas", createdAt: 4 }),
-      makeProduct({ id: "p_3", categoryId: "stickers", createdAt: 3 }),
+describe("interleaveByCategory", () => {
+  it("con un producto por categoría, los toma todos en el orden de los grupos", () => {
+    const groups = [
+      [makeProduct({ id: "p_pin", categoryId: "pines" })],
+      [makeProduct({ id: "p_taza", categoryId: "tazas" })],
+      [makeProduct({ id: "p_sticker", categoryId: "stickers" })],
     ];
 
-    const featured = pickFeaturedProducts(products, 6);
-
-    expect(featured.map((p) => p.id)).toEqual(["p_1", "p_2", "p_3"]);
+    expect(interleaveByCategory(groups, 6).map((p) => p.id)).toEqual([
+      "p_pin",
+      "p_taza",
+      "p_sticker",
+    ]);
   });
 
-  it("edge case: varios productos seguidos de la misma categoría no monopolizan Destacados", () => {
-    const products = [
-      makeProduct({ id: "p_1", categoryId: "pines", createdAt: 6 }),
-      makeProduct({ id: "p_2", categoryId: "pines", createdAt: 5 }),
-      makeProduct({ id: "p_3", categoryId: "pines", createdAt: 4 }),
-      makeProduct({ id: "p_4", categoryId: "tazas", createdAt: 3 }),
-      makeProduct({ id: "p_5", categoryId: "stickers", createdAt: 2 }),
+  it("bug real: con menos cupos que candidatos totales, una categoría con muchos más candidatos NO monopoliza el resultado", () => {
+    const groups = [
+      [makeProduct({ id: "llavero_1", categoryId: "llaveros" })],
+      [
+        makeProduct({ id: "taza_1", categoryId: "tazas" }),
+        makeProduct({ id: "taza_2", categoryId: "tazas" }),
+        makeProduct({ id: "taza_3", categoryId: "tazas" }),
+        makeProduct({ id: "taza_4", categoryId: "tazas" }),
+        makeProduct({ id: "taza_5", categoryId: "tazas" }),
+      ],
     ];
 
-    const featured = pickFeaturedProducts(products, 3);
+    // Solo 3 cupos para 6 candidatos totales: un slice ingenuo de "lo más
+    // reciente en general" (el bug real) hubiera dado 3 tazas seguidas si
+    // las tazas vinieran primero en el orden de recencia. Acá se garantiza
+    // que el llavero entra igual, en vez de quedar afuera por completo.
+    const featured = interleaveByCategory(groups, 3);
 
-    // Un solo "pines" (el más reciente), no los tres primeros del array.
-    expect(featured.map((p) => p.id)).toEqual(["p_1", "p_4", "p_5"]);
+    expect(featured.map((p) => p.id)).toEqual(["llavero_1", "taza_1", "taza_2"]);
+    expect(featured.some((p) => p.categoryId === "llaveros")).toBe(true);
   });
 
-  it("si hay menos categorías que cupos, completa con los siguientes productos más recientes sin repetir productos", () => {
-    const products = [
-      makeProduct({ id: "p_1", categoryId: "pines", createdAt: 5 }),
-      makeProduct({ id: "p_2", categoryId: "tazas", createdAt: 4 }),
-      makeProduct({ id: "p_3", categoryId: "pines", createdAt: 3 }),
-      makeProduct({ id: "p_4", categoryId: "tazas", createdAt: 2 }),
+  it("respeta el orden de recencia dentro de cada categoría (grupo ya viene ordenado por createdAt desc)", () => {
+    const groups = [
+      [
+        makeProduct({ id: "pin_reciente", categoryId: "pines" }),
+        makeProduct({ id: "pin_viejo", categoryId: "pines" }),
+      ],
+      [makeProduct({ id: "taza_1", categoryId: "tazas" })],
     ];
 
-    const featured = pickFeaturedProducts(products, 4);
+    const featured = interleaveByCategory(groups, 3);
 
-    expect(featured).toHaveLength(4);
-    expect(new Set(featured.map((p) => p.id)).size).toBe(4);
-    expect(featured.map((p) => p.id)).toEqual(["p_1", "p_2", "p_3", "p_4"]);
+    // Ronda 0: pin_reciente, taza_1. Ronda 1: pin_viejo (tazas ya no tiene más).
+    expect(featured.map((p) => p.id)).toEqual([
+      "pin_reciente",
+      "taza_1",
+      "pin_viejo",
+    ]);
   });
 
-  it("edge case: menos productos que cupos, devuelve todos sin romper", () => {
-    const products = [makeProduct({ id: "p_1" })];
+  it("edge case: categorías vacías (sin productos) no rompen nada", () => {
+    const groups: Product[][] = [[], [makeProduct({ id: "p_1" })], []];
 
-    expect(pickFeaturedProducts(products, 6)).toEqual(products);
+    expect(interleaveByCategory(groups, 6).map((p) => p.id)).toEqual(["p_1"]);
   });
 
-  it("edge case: sin productos, devuelve un array vacío", () => {
-    expect(pickFeaturedProducts([], 6)).toEqual([]);
+  it("edge case: sin candidatos en ninguna categoría, devuelve un array vacío", () => {
+    expect(interleaveByCategory([[], []], 6)).toEqual([]);
+  });
+
+  it("edge case: menos candidatos en total que el cupo pedido, devuelve todos sin romper", () => {
+    const groups = [[makeProduct({ id: "p_1" })]];
+
+    expect(interleaveByCategory(groups, 6).map((p) => p.id)).toEqual(["p_1"]);
   });
 });

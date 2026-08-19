@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useProducts } from "../hooks/useProducts";
 import { useTheme } from "../hooks/useTheme";
 import { ProductCard } from "../components/product/ProductCard";
@@ -8,43 +9,40 @@ import { LoadingState } from "../components/states/LoadingState";
 import { EmptyState } from "../components/states/EmptyState";
 import { ErrorState } from "../components/states/ErrorState";
 import { PRODUCT_CATEGORIES } from "../constants/categories";
+import { listFeaturedCandidates } from "../services/productsService";
 import type { Product } from "../types/product";
 
 // Cantidad de productos en "Destacados". No hay flag de "featured" en
-// Firestore todavía, así que sigue siendo un recorte de "products" (vista
-// por defecto, ya ordenada por createdAt desc -- ver listProducts), no una
-// curación manual.
+// Firestore todavía, así que sigue siendo automático a partir de lo más
+// reciente, no una curación manual.
 const FEATURED_COUNT = 6;
 
-// Antes era un slice directo de los primeros FEATURED_COUNT: si varios
-// productos seguidos se habían cargado de la misma categoría (típico
-// después de un seed por lotes), "Destacados" terminaba siendo 6 productos
-// de una sola categoría en vez de una vitrina. Acá se toma como mucho un
-// producto por categoría en una primera pasada (el más reciente de cada
-// una, porque "products" ya viene ordenado por createdAt desc) y recién si
-// sobran cupos -- hay menos categorías que FEATURED_COUNT -- se completa
-// con los siguientes productos más recientes que todavía no entraron.
-export function pickFeaturedProducts(
-  products: Product[],
+// Combina los grupos que devuelve listFeaturedCandidates (uno por
+// categoría, cada uno ya ordenado por createdAt desc) alternando entre
+// categorías en vez de agotar una antes de pasar a la siguiente: primera
+// ronda toma el más reciente de CADA categoría, segunda ronda el segundo
+// más reciente de cada una que todavía tenga, etc. Un simple concat + slice
+// hubiera dejado la vitrina corrida hacia las categorías con más grupos/
+// stock reciente (ver el bug real: Destacados terminaba siendo 5 tazas y
+// 1 llavero) en vez de alternar.
+export function interleaveByCategory(
+  groups: Product[][],
   count: number,
 ): Product[] {
-  const seenCategories = new Set<string>();
   const featured: Product[] = [];
+  let round = 0;
 
-  for (const product of products) {
-    if (featured.length >= count) break;
-    if (seenCategories.has(product.categoryId)) continue;
-    seenCategories.add(product.categoryId);
-    featured.push(product);
-  }
-
-  if (featured.length < count) {
-    const featuredIds = new Set(featured.map((p) => p.id));
-    for (const product of products) {
+  while (featured.length < count) {
+    let addedThisRound = false;
+    for (const group of groups) {
       if (featured.length >= count) break;
-      if (featuredIds.has(product.id)) continue;
+      const product = group[round];
+      if (!product) continue;
       featured.push(product);
+      addedThisRound = true;
     }
+    if (!addedThisRound) break;
+    round++;
   }
 
   return featured;
@@ -68,6 +66,28 @@ export function HomePage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
+  // Destacados se resuelve aparte de "products" (que es la vista paginada
+  // del catálogo, category=null) -- ver interleaveByCategory arriba para
+  // el motivo. Falla silenciosa a propósito: es una vitrina decorativa, si
+  // la carga falla simplemente no se muestra la sección en vez de romper
+  // el resto del home.
+  const [featured, setFeatured] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listFeaturedCandidates(2)
+      .then((groups) => {
+        if (cancelled) return;
+        setFeatured(interleaveByCategory(groups, FEATURED_COUNT));
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Vista "landing": el hero/tiles/destacados son bienvenida, no catálogo.
   // showLanding (ProductsContext) es un flag aparte de categoryId/
   // searchInput -- "Todas" también deja categoryId en null pero debe
@@ -75,7 +95,6 @@ export function HomePage() {
   // ProductsContext.tsx). Se ocultan en vez de convivir con el resto para
   // no repetir productos dos veces en pantalla sin motivo.
   const isDefaultView = showLanding;
-  const featured = pickFeaturedProducts(products, FEATURED_COUNT);
 
   return (
     <div className={`min-h-screen ${isDark ? "bg-[#0f0e17]" : "bg-white"}`}>
@@ -100,7 +119,7 @@ export function HomePage() {
           </div>
         )}
 
-        {isDefaultView && status === "idle" && featured.length > 0 && (
+        {isDefaultView && featured.length > 0 && (
           <div className="mb-10">
             <h2
               className={`font-['Fredoka'] text-xl font-semibold mb-3 ${
@@ -117,7 +136,7 @@ export function HomePage() {
           </div>
         )}
 
-        {isDefaultView && status === "idle" && featured.length > 0 && (
+        {isDefaultView && featured.length > 0 && (
           <div className="flex items-center gap-3 mb-6" aria-hidden="true">
             <span className={`h-px flex-1 ${isDark ? "bg-[#2e2a45]" : "bg-[#ede9fe]"}`} />
             <span

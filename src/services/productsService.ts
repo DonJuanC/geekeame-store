@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { Product } from "../types/product";
+import { PRODUCT_CATEGORIES } from "../constants/categories";
 
 // Quita tildes/diacríticos para que "pokemon" matchee "Pokémon".
 function stripAccents(text: string): string {
@@ -117,6 +118,32 @@ export async function listProducts({
       : null;
 
   return { products, nextCursor };
+}
+
+// Candidatos para "Destacados" (HomePage), agrupados por categoría. Antes
+// esa sección salía de un simple slice de los productos más recientes SIN
+// filtro de categoría (la misma página de PRODUCTS_PAGE_SIZE que usa el
+// catálogo por defecto) -- si los últimos productos cargados en el catálogo
+// eran todos de una categoría (típico administrando por lotes), Destacados
+// quedaba monopolizado por esa categoría aunque el resto del catálogo
+// tuviera variedad de sobra, porque las demás categorías directamente no
+// entraban en esa página. Acá se pide lo más reciente de CADA categoría por
+// separado (mismo shape de query que filtrar el catálogo por categoría, ya
+// indexado) para garantizar representación real sin depender de en qué
+// posición de la paginación general haya quedado cada categoría. Quien
+// llama decide cómo combinar los grupos -- ver interleaveByCategory en
+// HomePage.tsx.
+export async function listFeaturedCandidates(
+  perCategory = 2,
+): Promise<Product[][]> {
+  const groups = await Promise.all(
+    PRODUCT_CATEGORIES.map((c) =>
+      listProducts({ categoryId: c.id, pageSize: perCategory }).then(
+        (result) => result.products,
+      ),
+    ),
+  );
+  return groups;
 }
 
 export async function getProductById(id: string): Promise<Product | null> {

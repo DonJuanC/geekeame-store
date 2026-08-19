@@ -25,13 +25,26 @@ vi.mock("firebase/firestore", () => ({
 
 vi.mock("./firebase", () => ({ db: {} }));
 
-import { addDoc, deleteDoc, doc, collection, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  deleteDoc,
+  doc,
+  collection,
+  updateDoc,
+  getDocs,
+  query,
+  where,
+  limit,
+  orderBy,
+} from "firebase/firestore";
 import {
   buildSearchKeywords,
   createProduct,
   deleteProduct,
+  listFeaturedCandidates,
   updateProduct,
 } from "./productsService";
+import { PRODUCT_CATEGORIES } from "../constants/categories";
 
 describe("buildSearchKeywords", () => {
   it("genera prefijos en minúscula de cada palabra del nombre", () => {
@@ -120,5 +133,76 @@ describe("productsService (CRUD admin)", () => {
     await deleteProduct("p_1");
 
     expect(deleteDoc).toHaveBeenCalledWith("product-ref");
+  });
+});
+
+describe("listFeaturedCandidates", () => {
+  // Bug real: Destacados salía de un slice de "los más recientes" SIN
+  // filtro de categoría, así que si esa página no traía ninguna categoría
+  // faltante, esa categoría directamente no aparecía. Este test verifica
+  // la parte de la que depende el fix -- que se consulta cada categoría
+  // por separado, no una sola query general -- independiente de
+  // interleaveByCategory (que ya tiene su propia cobertura en
+  // HomePage.test.ts).
+  beforeEach(() => {
+    vi.mocked(collection).mockReset();
+    vi.mocked(query).mockReset();
+    vi.mocked(where).mockReset();
+    vi.mocked(limit).mockReset();
+    vi.mocked(orderBy).mockReset();
+    vi.mocked(getDocs).mockReset();
+  });
+
+  it("consulta cada categoría por separado y devuelve un grupo por categoría en el mismo orden que PRODUCT_CATEGORIES", async () => {
+    vi.mocked(collection).mockReturnValue("products-collection" as never);
+    vi.mocked(orderBy).mockReturnValue({ type: "orderBy" } as never);
+    vi.mocked(limit).mockReturnValue({ type: "limit" } as never);
+    vi.mocked(where).mockImplementation(
+      (field, _op, value) => ({ type: "where", field, value }) as never,
+    );
+    vi.mocked(query).mockImplementation(
+      (_ref, ...constraints) => constraints as never,
+    );
+    vi.mocked(getDocs).mockImplementation(async (q) => {
+      const constraints = q as Array<{ type?: string; field?: string; value?: unknown }>;
+      const categoryClause = constraints.find(
+        (c) => c?.type === "where" && c.field === "categoryId",
+      );
+      const categoryId = categoryClause?.value as string;
+      return {
+        docs: [
+          {
+            id: `${categoryId}_1`,
+            data: () => ({ categoryId, name: `Producto de ${categoryId}` }),
+          },
+        ],
+      } as never;
+    });
+
+    const groups = await listFeaturedCandidates(2);
+
+    expect(groups).toHaveLength(PRODUCT_CATEGORIES.length);
+    groups.forEach((group, i) => {
+      expect(group).toHaveLength(1);
+      expect(group[0].categoryId).toBe(PRODUCT_CATEGORIES[i].id);
+    });
+  });
+
+  it("edge case: una categoría sin productos devuelve un grupo vacío, no rompe las demás", async () => {
+    vi.mocked(collection).mockReturnValue("products-collection" as never);
+    vi.mocked(orderBy).mockReturnValue({ type: "orderBy" } as never);
+    vi.mocked(limit).mockReturnValue({ type: "limit" } as never);
+    vi.mocked(where).mockImplementation(
+      (field, _op, value) => ({ type: "where", field, value }) as never,
+    );
+    vi.mocked(query).mockImplementation(
+      (_ref, ...constraints) => constraints as never,
+    );
+    vi.mocked(getDocs).mockResolvedValue({ docs: [] } as never);
+
+    const groups = await listFeaturedCandidates(2);
+
+    expect(groups).toHaveLength(PRODUCT_CATEGORIES.length);
+    groups.forEach((group) => expect(group).toEqual([]));
   });
 });
