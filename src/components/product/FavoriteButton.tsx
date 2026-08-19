@@ -64,7 +64,14 @@ export function FavoriteButton({ productId, className = "" }: FavoriteButtonProp
   }
 
   return (
-    <span className={`relative inline-block ${className}`}>
+    // Sin "relative" acá: el className del caller siempre trae "absolute"
+    // (ProductCard/ProductDetailPage), y Tailwind resuelve el conflicto
+    // relative+absolute a favor de "relative" en el CSS generado -- eso
+    // sacaba el corazón de su posición absoluta en la esquina de la tarjeta
+    // y lo dejaba flotando en el flujo normal, semi-afuera del recuadro.
+    // "absolute" ya alcanza como positioning context para el mensaje de
+    // error de abajo.
+    <span className={`inline-block ${className}`}>
       <button
         type="button"
         onClick={handleClick}
