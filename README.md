@@ -43,7 +43,7 @@ Flujo completo, paso a paso:
 1. El admin selecciona una imagen en el form de producto. El frontend (`uploadService.ts`) pide un ID token de Firebase del usuario logueado (`auth.currentUser.getIdToken()`).
 2. El frontend hace `POST /api/presign-upload` con `{ fileName, fileType }` y el ID token en el header `Authorization: Bearer`.
 3. La función decodifica el `uid` del token (sin verificar la firma ahí mismo) y reenvía ese mismo token como Bearer auth a la API REST de Firestore para leer `users/{uid}` — es Firestore quien verifica la firma del token y aplica sus reglas; si el rol no es `admin`, la función responde `403`.
-4. Si el rol es admin, la función valida que `fileType` esté en la lista de tipos permitidos, arma una `key` única (`products/<uuid>-<nombre-saneado>`) y genera una URL firmada con `getSignedUrl` (AWS SDK v3), válida 60 segundos.
+4. Si el rol es admin, la función valida que `fileType` esté en la lista de tipos permitidos y que `fileSize` no supere 5MB (rechaza con `400` si falta, no es numérico o se pasa del límite), arma una `key` única (`products/<uuid>-<nombre-saneado>`) y genera una URL firmada con `getSignedUrl` (AWS SDK v3), válida 60 segundos y con `ContentLength` fijado al tamaño declarado — así S3 mismo rechaza un archivo más grande que el anunciado, no solo la validación del cliente.
 5. El frontend recibe `{ uploadUrl, publicUrl }` y hace un `PUT` directo a `uploadUrl` con el archivo — ese `PUT` va a S3, no pasa por Vercel.
 6. `publicUrl` es la URL final que se guarda en el documento del producto en Firestore.
 
@@ -105,16 +105,19 @@ Ver `.env.example`. Las que empiezan con `VITE_` son de Firebase y quedan expues
 ```
 src/
   components/    # UI reutilizable (auth, product, admin, states)
-  contexts/       # CartContext, AuthContext, ProductsContext
-  hooks/         # useCart, useAuth
+  contexts/      # CartContext, AuthContext, ProductsContext, FavoritesContext
+  hooks/         # useCart, useAuth, useFavorites, useProducts, useTheme
   pages/         # rutas (incluye pages/admin para el panel de administración)
   services/      # acceso a Firebase/Firestore y a la API de uploads
-  types/         # tipos compartidos (product, order, review, cart, auth)
+  types/         # tipos compartidos (product, order, review, cart, auth, favoriteList)
+  utils/         # funciones puras compartidas (ej. interleaveByCategory, usada por HomePage)
 api/
   presign-upload.ts   # Vercel Function: genera URL presignada de S3
 scripts/
-  seed.mjs                    # carga productos de ejemplo en Firestore
-  backfillSearchKeywords.mjs  # genera keywords de búsqueda para productos existentes
+  seed.mjs                      # carga productos de ejemplo en Firestore
+  backfillSearchKeywords.mjs    # genera keywords de búsqueda para productos existentes
+  roundPrices.mjs               # normaliza precios existentes a valores redondos
+  migrateCuadrosToPosters.mjs   # migración puntual, ya corrida (renombró la categoría "cuadros-punto-cruz" a "posters")
 firestore.rules          # reglas de seguridad -- desplegables por CLI (ver "Seguridad" abajo)
 firestore.indexes.json   # índices compuestos versionados -- hoy solo tiene el de orders (userId+createdAt), confirmado real; sincronizar con `firebase firestore:indexes` antes de asumirlo completo
 firebase.json            # config de Firestore (rules/indexes) + Hosting -- Hosting no se usa para desplegar (el deploy real es en Vercel), solo firestore:rules/firestore:indexes
@@ -124,7 +127,7 @@ firebase.json            # config de Firestore (rules/indexes) + Hosting -- Host
 
 - Catálogo público con búsqueda y detalle de producto
 - Carrito de compras (persistido en contexto de React)
-- Autenticación (registro/login) y checkout con creación de orden en Firestore
+- Autenticación (registro/login, recuperación de contraseña por email) y checkout con creación de orden en Firestore
 - Historial de órdenes del usuario
 - Reseñas de producto: calificación 1-5 estrellas + comentario, una reseña por usuario por producto (editable), promedio visible en el detalle, restringida a quien compró el producto (`hasPurchasedProduct`)
 - Favoritos por usuario
@@ -160,3 +163,5 @@ Registro de decisiones técnicas reales tomadas con asistencia de IA durante el 
 | 4 | El botón "Todas" del catálogo y el logo del header deberían hacer lo mismo, ¿no? | No — son dos acciones distintas: "Todas" limpia el filtro de categoría pero se queda en la vista de catálogo; volver por el logo tiene que además "salir" del catálogo y mostrar la landing completa (hero, categorías, destacados). Necesitaban dos piezas de estado separadas en `ProductsContext`, no una sola bandera. | `goToLanding()` (limpia filtro/búsqueda y activa `showLanding`) separado del handler del pill "Todas" (solo limpia el filtro). |
 | 5 | Después de un fix anterior, el corazón de favoritos se sale un poco del recuadro de la card — ¿qué cambió? | Se había agregado `relative` directo en el wrapper del botón, pero el caller ya le pasaba `absolute` por `className`. En el CSS que compila Tailwind, `relative` gana sobre `absolute` cuando ambas clases están presentes en el mismo elemento, sin importar el orden en que aparecen en el string — es el orden de las utilities en la hoja generada, no el de `className`, lo que decide. | Quitar el `relative` hardcodeado del wrapper: el componente confía en que el caller siempre pasa el positioning completo (`absolute top-N right-N z-10`) por props. |
 | 6 | Después de la auditoría UI/UX completa, ¿cómo saber qué le falta al proyecto frente a lo que Henry realmente evalúa? | Comparar código contra una rúbrica externa con subagentes en paralelo (uno por bloque de criterios) encontró huecos que revisando pantalla por pantalla no aparecían — el más importante, que la bitácora de uso de IA no existía en el README, pesa en la nota tanto o más que varias mejoras de código juntas. | Priorizar el trabajo restante por impacto en la rúbrica (bitácora de IA primero, después `strict` mode, después el resto), no por lo que se nota más a simple vista. |
+| 7 | Se pidió mostrar productos de varias categorías en "Destacados"; el primer fix se deployó pero el usuario seguía viendo lo mismo en producción — ¿por qué? | El primer intento elegía "hasta 1 producto por categoría" pero sobre la misma página ya paginada de productos recientes (`PRODUCTS_PAGE_SIZE`). Si esa ventana de 12 productos no incluía ninguna categoría (porque las últimas cargas del catálogo fueron todas de otra), el algoritmo de selección no tenía nada que elegir de ahí, sin importar qué tan bien estuviera escrito. Confirmarlo por lectura de código no alcanzaba — hizo falta navegar a producción con Claude in Chrome y capturar el estado real (1 categoría con 5 productos, el resto ausente) antes de descartar causas alternativas. | Reemplazar la fuente de datos, no el algoritmo: `listFeaturedCandidates()` consulta cada categoría por separado en Firestore (independiente de la paginación general), e `interleaveByCategory()` combina esos grupos ya diversos alternando ronda por ronda. |
+| 8 | Barrido final de limpieza de código antes de la entrega — ¿qué tan prolijo está realmente? | `npm run lint` no se había corrido completo en toda la sesión: arrojó 7 errores reales que ni `tsc` ni los 64 tests detectan, porque no son errores de tipos ni de comportamiento sino un patrón que `eslint-plugin-react-hooks` v7 desaconseja (`setState` síncrono en el cuerpo de un efecto, con riesgo de renders en cascada). | En vez de silenciar la regla, reescribir los 4 efectos afectados (`ProductReviews`, `FavoritesContext`, `ProductsContext`, `FavoritesPage`) con estado derivado — mismo patrón `loadedParams` que ya existía en `ProductsContext` — verificando los 64 tests después de cada archivo para no cambiar comportamiento, solo la forma de lograrlo. |
