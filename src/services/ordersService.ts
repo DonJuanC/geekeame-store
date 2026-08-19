@@ -14,6 +14,39 @@ import { db } from "./firebase";
 import type { Order, OrderItemSnapshot, OrderStatus } from "../types/order";
 import type { Product } from "../types/product";
 
+// Checkout sin timeout era el hallazgo crítico de la auditoría UX: si la red
+// se cae a mitad de la transacción, el usuario quedaba viendo "Procesando..."
+// indefinidamente, sin poder cancelar ni saber si el pedido se creó o no.
+// Esto NO cancela la transacción de Firestore en curso (no hay forma de
+// abortar un runTransaction ya enviado) -- solo deja de esperarla y le avisa
+// al usuario, que es lo que UX necesita. Por eso el mensaje de timeout en
+// CheckoutPage es explícito sobre revisar "Mis pedidos" antes de reintentar,
+// en vez de asumir que no pasó nada.
+export class OrderTimeoutError extends Error {
+  constructor() {
+    super("La operación tardó demasiado.");
+    this.name = "OrderTimeoutError";
+  }
+}
+
+const CREATE_ORDER_TIMEOUT_MS = 20_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new OrderTimeoutError()), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
 export async function createOrder(
   userId: string,
   items: OrderItemSnapshot[],
@@ -21,7 +54,7 @@ export async function createOrder(
 ): Promise<string> {
   const orderRef = doc(collection(db, "orders"));
 
-  await runTransaction(db, async (transaction) => {
+  await withTimeout(runTransaction(db, async (transaction) => {
     const productRefs = items.map((item) =>
       doc(db, "products", item.productId),
     );
@@ -60,7 +93,7 @@ export async function createOrder(
       status: "pending" as OrderStatus,
       createdAt: Date.now(),
     });
-  });
+  }), CREATE_ORDER_TIMEOUT_MS);
 
   return orderRef.id;
 }
