@@ -57,11 +57,8 @@ export async function signIn(
 // depender de ese relevo cross-origin tras una navegación completa), así
 // que evita el problema en vez de perseguirlo.
 export async function signInWithGoogle(): Promise<UserProfile> {
-  console.log("[GoogleAuth] apiKey en uso:", auth.config.apiKey);
-  console.log("[GoogleAuth] authDomain en uso:", auth.config.authDomain);
   try {
     const cred = await signInWithPopup(auth, new GoogleAuthProvider());
-    console.log("[GoogleAuth] signInWithPopup OK, uid:", cred.user.uid);
     return ensureUserProfile(cred.user.uid, cred.user.email ?? "");
   } catch (err) {
     // Log completo (code/message), no solo el objeto -- así se puede
