@@ -27,7 +27,7 @@ import { useProducts } from "../../hooks/useProducts";
 // scrollear, en vez de quedar tapado detrás. El header necesita quedar
 // por encima de cualquier contenido que pase debajo al hacer scroll.
 export function StoreHeader() {
-  const { user, signOut } = useAuth();
+  const { user, status: authStatus, signOut } = useAuth();
   const { items } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { goToLanding } = useProducts();
@@ -158,7 +158,21 @@ export function StoreHeader() {
             </Link>
           )}
 
-          {user ? (
+          {authStatus === "loading" ? (
+            // Placeholder neutro mientras Firebase Auth rehidrata la sesión
+            // desde IndexedDB (onAuthStateChanged en AuthContext, ~1-2s en
+            // un refresh completo): antes esta rama no existía y el header
+            // mostraba "Iniciar sesión" un instante aunque hubiera sesión
+            // activa, porque solo miraba truthy/falsy de "user" -- nunca el
+            // status "loading" que AuthState ya distingue. Tamaño similar a
+            // los botones reales para no saltar el layout cuando resuelve.
+            <div
+              aria-hidden="true"
+              className={`rounded-full w-28 h-8 animate-pulse ${
+                isDark ? "bg-[#2e2a45]" : "bg-[#ede9fe]"
+              }`}
+            />
+          ) : user ? (
             <div className="flex items-center gap-2">
               <span
                 className={`hidden sm:inline ${
