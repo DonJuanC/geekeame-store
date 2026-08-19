@@ -21,7 +21,11 @@ export async function uploadProductImage(file: File): Promise<string> {
       "Content-Type": "application/json",
       Authorization: `Bearer ${idToken}`,
     },
-    body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+    body: JSON.stringify({
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+    }),
   });
 
   if (!presignRes.ok) {

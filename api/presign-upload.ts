@@ -6,6 +6,12 @@ import { randomUUID } from "node:crypto";
 // Tipos de imagen aceptados para portadas de producto.
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 
+// Antes esto solo se validaba en el input del formulario en el navegador
+// (ver AdminProductFormPage) -- cualquiera con el token de un admin podía
+// saltarse ese límite llamando directo a este endpoint. 5MB es de sobra
+// para una imagen de portada de producto ya optimizada para web.
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
 // Extrae el uid del payload del ID token de Firebase SIN verificar la
 // firma acá -- no hace falta: isAdmin() reenvía el mismo token a la API
 // REST de Firestore como Bearer auth, y es Firestore quien verifica la
@@ -51,9 +57,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const { fileName, fileType } = (req.body ?? {}) as {
+  const { fileName, fileType, fileSize } = (req.body ?? {}) as {
     fileName?: unknown;
     fileType?: unknown;
+    fileSize?: unknown;
   };
 
   if (typeof fileName !== "string" || typeof fileType !== "string") {
@@ -62,6 +69,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (!ALLOWED_TYPES.includes(fileType)) {
     res.status(400).json({ error: "Tipo de archivo no permitido." });
+    return;
+  }
+  if (
+    typeof fileSize !== "number" ||
+    !Number.isFinite(fileSize) ||
+    fileSize <= 0 ||
+    fileSize > MAX_FILE_SIZE_BYTES
+  ) {
+    res.status(400).json({
+      error: `El archivo supera el límite de ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB.`,
+    });
     return;
   }
 
@@ -85,10 +103,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     credentials: { accessKeyId, secretAccessKey },
   });
 
+  // ContentLength firmado como parte de la request: S3 exige que el PUT
+  // real mande exactamente ese Content-Length, así que el límite de tamaño
+  // queda forzado por S3 mismo, no solo por la validación de arriba (que
+  // el cliente podría saltarse llamando al endpoint directo con un
+  // fileSize falso y subiendo un archivo más grande de todos modos).
   const command = new PutObjectCommand({
     Bucket: bucket,
     Key: key,
     ContentType: fileType,
+    ContentLength: fileSize,
   });
 
   try {
