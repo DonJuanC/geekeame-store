@@ -43,9 +43,17 @@ vi.mock("../services/authService", () => ({
   fetchUserProfile: vi.fn(),
 }));
 
-vi.mock("../services/ordersService", () => ({
-  createOrder: vi.fn(),
-}));
+// Mock parcial: OrderTimeoutError tiene que seguir siendo la clase real
+// (CheckoutPage hace `err instanceof OrderTimeoutError`), solo createOrder
+// se reemplaza. Un mock completo del módulo (sin importOriginal) dejaba
+// OrderTimeoutError undefined y rompía en tiempo de ejecución.
+vi.mock("../services/ordersService", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../services/ordersService")>();
+  return {
+    ...actual,
+    createOrder: vi.fn(),
+  };
+});
 
 import { onAuthStateChanged } from "firebase/auth";
 import * as authService from "../services/authService";
