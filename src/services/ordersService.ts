@@ -4,6 +4,7 @@ import {
   getDoc,
   getDocs,
   limit,
+  onSnapshot,
   orderBy,
   query,
   runTransaction,
@@ -131,6 +132,35 @@ export async function listAllOrders(): Promise<Order[]> {
   );
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Order);
+}
+
+// Versión en tiempo real de listAllOrders, para AdminOrdersPage: un admin
+// que deja la pestaña abierta ve pedidos nuevos (de cualquier cliente, en
+// cualquier sesión) sin tener que refrescar manualmente. Mismo shape de
+// query (sin índice compuesto adicional, ver nota de listAllOrders arriba).
+// onSnapshot entrega un primer callback con el estado actual (de cache
+// local si existe) y después uno por cada cambio -- quien llama es
+// responsable de invocar la función de unsubscribe que devuelve (ej. en el
+// cleanup de un useEffect), para no dejar el listener corriendo de más
+// después de desmontar la página.
+export function subscribeToAllOrders(
+  onChange: (orders: Order[]) => void,
+  onError: (error: Error) => void,
+): () => void {
+  const q = query(
+    collection(db, "orders"),
+    orderBy("createdAt", "desc"),
+    limit(500),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      onChange(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Order));
+    },
+    (err) => {
+      onError(err instanceof Error ? err : new Error(String(err)));
+    },
+  );
 }
 
 export async function updateOrderStatus(

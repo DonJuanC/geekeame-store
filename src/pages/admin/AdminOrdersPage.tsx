@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "../../hooks/useTheme";
 import {
-  listAllOrders,
+  subscribeToAllOrders,
   updateOrderStatus,
 } from "../../services/ordersService";
 import type { Order, OrderStatus } from "../../types/order";
@@ -28,30 +28,37 @@ export function AdminOrdersPage() {
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  // Solo para forzar una nueva suscripción desde "Reintentar" -- onSnapshot
+  // ya reconecta solo ante caídas de red transitorias; esto es para el caso
+  // de un error no recuperable (ej. permission-denied) donde el listener
+  // quedó desconectado y hay que volver a suscribirse desde cero.
+  const [retryKey, setRetryKey] = useState(0);
 
-  // Mismo patrón que AdminProductsPage: nada de setState síncrono al
-  // arrancar el efecto (react-hooks/set-state-in-effect). El reintento
-  // manual sí resetea "loading"/actionError, porque corre desde un click.
-  const fetchOrders = useCallback(() => {
-    return listAllOrders()
-      .then((result) => {
+  // Tiempo real: un admin que deja esta pestaña abierta ve pedidos nuevos
+  // de cualquier cliente sin refrescar -- antes era un fetch de una sola
+  // vez (listAllOrders) que solo se actualizaba con un reintento manual o
+  // un recargo de página. setOrders/setStatus acá corren dentro del
+  // callback de onSnapshot, no en el cuerpo síncrono del efecto (que solo
+  // llama a subscribeToAllOrders y devuelve el unsubscribe) -- no dispara
+  // react-hooks/set-state-in-effect.
+  useEffect(() => {
+    const unsubscribe = subscribeToAllOrders(
+      (result) => {
         setOrders(result);
         setStatus("idle");
-      })
-      .catch((err) => {
+      },
+      (err) => {
         console.error(err);
         setStatus("error");
-      });
-  }, []);
-
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+      },
+    );
+    return unsubscribe;
+  }, [retryKey]);
 
   function handleRetry() {
     setStatus("loading");
     setActionError(null);
-    fetchOrders();
+    setRetryKey((k) => k + 1);
   }
 
   async function handleStatusChange(order: Order, newStatus: OrderStatus) {
@@ -60,14 +67,11 @@ export function AdminOrdersPage() {
     setUpdatingId(order.id);
     setActionError(null);
     try {
+      // Sin actualización optimista en memoria: la suscripción de arriba
+      // ya refleja el cambio apenas Firestore lo confirma (el propio SDK
+      // hace un eco casi instantáneo desde cache local), así que mantener
+      // un setOrders manual acá sería estado duplicado sin necesidad.
       await updateOrderStatus(order.id, newStatus);
-      // Actualiza en memoria en vez de recargar todo: evita un fetch
-      // completo por cada cambio de estado y mantiene el filtro actual.
-      setOrders((current) =>
-        current.map((o) =>
-          o.id === order.id ? { ...o, status: newStatus } : o,
-        ),
-      );
     } catch (err) {
       setActionError(
         err instanceof Error
