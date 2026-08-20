@@ -54,7 +54,7 @@ export function HeroSection() {
       </div>
 
       <div className="hero-fade-in-up relative max-w-5xl mx-auto px-4 py-16 sm:py-20 text-center">
-        <h1 className="font-['Fredoka'] text-3xl sm:text-5xl font-semibold text-white drop-shadow-sm">
+        <h1 className="font-['Fredoka',_sans-serif] text-3xl sm:text-5xl font-semibold text-white drop-shadow-sm">
           Geekeame tu espacio
         </h1>
         <p className="mt-3 text-base sm:text-lg text-[#f5f3ff] max-w-md mx-auto">

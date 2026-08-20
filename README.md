@@ -11,7 +11,7 @@ Geekeame es una tienda de nicho: productos de cultura geek en cinco categorías 
 Los dos roles de usuario son:
 
 - **Cliente**: navega el catálogo, busca, agrega al carrito, hace checkout, ve su historial de pedidos, deja reseñas de lo que compró, marca favoritos.
-- **Admin**: todo lo anterior más el panel `/admin` — alta/edición/borrado de productos (con subida de imagen a S3), gestión de estado de órdenes, dashboard de analytics (ingresos, ventas por día, productos más vendidos, stock bajo).
+- **Admin**: todo lo anterior más el panel `/admin` — alta/edición/borrado de productos (con subida de imagen a S3), gestión de estado de órdenes, gestión de rol de otros usuarios (`/admin/users`), dashboard de analytics (ingresos, ventas por día, productos más vendidos, stock bajo).
 
 ## Stack
 
@@ -105,7 +105,7 @@ Ver `.env.example`. Las que empiezan con `VITE_` son de Firebase y quedan expues
 ```
 src/
   components/    # UI reutilizable (auth, product, admin, states)
-  contexts/      # CartContext, AuthContext, ProductsContext, FavoritesContext
+  contexts/      # AppProviders (centraliza los 5), CartContext, AuthContext, ProductsContext, FavoritesContext, ThemeContext
   hooks/         # useCart, useAuth, useFavorites, useProducts, useTheme
   pages/         # rutas (incluye pages/admin para el panel de administración)
   services/      # acceso a Firebase/Firestore y a la API de uploads
@@ -131,7 +131,8 @@ firebase.json            # config de Firestore (rules/indexes) + Hosting -- Host
 - Historial de órdenes del usuario
 - Reseñas de producto: calificación 1-5 estrellas + comentario, una reseña por usuario por producto (editable), promedio visible en el detalle, restringida a quien compró el producto (`hasPurchasedProduct`)
 - Favoritos por usuario
-- Panel de administración (`/admin`, solo rol `admin`, cargado bajo demanda vía `React.lazy`/`Suspense` para no pesar el bundle público): alta/edición/borrado de productos con subida de imagen a S3 (con búsqueda por nombre y filtro por categoría en la tabla), gestión de estado de órdenes en tiempo real (`onSnapshot`), dashboard de analytics
+- Modo oscuro (Home, header, product cards y checkout; el resto del sitio se sigue migrando)
+- Panel de administración (`/admin`, solo rol `admin`, cargado bajo demanda vía `React.lazy`/`Suspense` para no pesar el bundle público): alta/edición/borrado de productos con subida de imagen a S3 (con búsqueda por nombre y filtro por categoría en la tabla), gestión de estado de órdenes en tiempo real (`onSnapshot`), gestión de rol de usuarios (customer/admin), dashboard de analytics
 
 ## Seguridad
 
@@ -153,7 +154,7 @@ Guía de construcción ampliada y bitácora detallada de uso de IA, en Notion: h
 
 ## Bitácora de uso de IA
 
-Registro de decisiones técnicas reales tomadas con asistencia de IA durante el desarrollo, no un resumen de "se pidió código y se usó" — cada entrada muestra la pregunta real, qué se aprendió, y la decisión que resultó. Las entradas 1 a 9 documentan las decisiones estructurales del arranque del proyecto (arquitectura, modelo de datos, componentes, catálogo, carrito, autenticación, panel admin, checkout, testing/deploy); las entradas 10 a 21 son el registro directo de problemas reales resueltos ya con el proyecto funcionando.
+Registro de decisiones técnicas reales tomadas con asistencia de IA durante el desarrollo, no un resumen de "se pidió código y se usó" — cada entrada muestra la pregunta real, qué se aprendió, y la decisión que resultó. Las entradas 1 a 9 documentan las decisiones estructurales del arranque del proyecto (arquitectura, modelo de datos, componentes, catálogo, carrito, autenticación, panel admin, checkout, testing/deploy); las entradas 10 a 21 son el registro directo de problemas reales resueltos ya con el proyecto funcionando; las entradas 22 a 24 son la ronda de feedback real de la instructora del módulo, resuelta en tres etapas (roles/permisos, bugs menores de UX, arquitectura).
 
 | # | Prompt / pregunta | Qué se aprendió | Decisión tomada |
 |---|---|---|---|
@@ -178,3 +179,6 @@ Registro de decisiones técnicas reales tomadas con asistencia de IA durante el 
 | 19 | ¿Cómo evitar que el bundle público cargue el código completo del panel admin, que un cliente normal nunca visita? | `React.lazy` necesita el import como default export; las 5 páginas admin usan named export, así que hizo falta envolver el import en `.then(m => ({ default: m.X }))` en vez de un `lazy()` directo. | Cada página admin se carga bajo demanda con `React.lazy`, cubiertas por un único `<Suspense>` que envuelve toda la ruta `/admin` (alcanza también a las rutas hijas anidadas vía `<Outlet/>`). Bajada modesta del bundle principal (862KB→831KB): el peso dominante sigue siendo el SDK de Firebase, necesario en todas las rutas. |
 | 20 | El filtro de productos del panel admin, ¿necesita una query nueva a Firestore por categoría o por texto? | No — `listAllProductsForAdmin` ya trae hasta 500 productos completos en una sola llamada; filtrar en el cliente evita una query adicional (y, para búsqueda por texto, un índice compuesto nuevo) sobre datos que ya están en memoria. | Función pura `filterAdminProducts` (categoría exacta + substring case-insensitive sobre `nameLower`, ya precomputado) aplicada client-side en `AdminProductsPage`, testeada con 5 casos (sin filtro, por categoría, por texto, combinado, sin match). |
 | 21 | Con `onSnapshot` ya suscrito a la colección `orders`, ¿todavía hace falta actualizar el estado local a mano después de cada cambio de estado? | No — el propio SDK de Firestore hace un eco casi instantáneo del cambio recién escrito desde su cache local, así que mantener además una actualización optimista manual era estado duplicado sin necesidad real. | `AdminOrdersPage` deja que la suscripción `subscribeToAllOrders` sea la única fuente de verdad tras un cambio de estado; se retira el `setOrders` manual que existía antes en `handleStatusChange`. |
+| 22 | Feedback real de la instructora: los permisos de rol se debían gestionar desde el panel Admin, y había que revisar el chequeo de rol al subir imágenes — ¿qué faltaba realmente? | El chequeo de rol en la subida de imágenes ya estaba resuelto server-side (`api/presign-upload.ts` valida contra Firestore antes de firmar la URL); lo que realmente faltaba era la escritura — `firestore.rules` bloqueaba por completo cambiar el campo `role` de cualquier perfil, incluso para un admin. | Regla de Firestore que permite a un admin tocar únicamente el campo `role` de un perfil ajeno (`diff().affectedKeys().hasOnly(['role'])`), nunca el propio; `usersService.ts` + `AdminUsersPage` nuevos para gestionar roles desde la UI. |
+| 23 | Batch de 9 items de feedback (bugs menores de UX): spinner de carga, cancelar favoritos sin login, componentes reutilizables de título/grid, carrito o favoritos compartidos entre usuarios, deshabilitar botón al superar stock, logo en la nav, cantidad visible en el carrito, dark mode en checkout. | El bug real de "se mantiene el carrito de otro usuario" no estaba en favoritos (ya aislado por uid en Firestore, detrás de `RequireAuth`) sino en el carrito, persistido en `localStorage` bajo una clave global sin distinguir sesión. | `clearCart()` en el sign-out; tope de stock del lado del cliente en `cartReducer`; guard por uid en `FavoritesContext` como hardening adicional (respuesta tardía de otro usuario); extracción de `ProductGrid`/`AdminPageTitle` compartidos; `CheckoutPage` sumado al sistema de dark mode. |
+| 24 | Feedback de arquitectura: modularizar los contexts, crear un `AppProvider`, quitar comentarios del código, documentar los flujos por funcionalidad. | Los contexts ya seguían un patrón modular (Context + hook separados en archivos propios, reducer propio en el carrito) — lo que realmente faltaba era centralizar el árbol de Providers, hasta entonces anidado a mano en `main.tsx`. Los comentarios de diseño sí valía la pena conservarlos, pero como documentación de sustentación en Notion, no como código fuente. | `AppProviders.tsx` centraliza los 5 Providers; comentarios de justificación removidos de 62 archivos de código y archivados en una página nueva de Notion (flujos técnicos + decisiones por archivo), enlazada desde la guía de Defensa del proyecto. |

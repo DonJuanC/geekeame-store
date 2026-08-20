@@ -70,7 +70,7 @@ export function HomePage() {
         {isDefaultView && featured.length > 0 && (
           <div className="mb-10">
             <h2
-              className={`font-['Fredoka'] text-xl font-semibold mb-3 ${
+              className={`font-['Fredoka',_sans-serif] text-xl font-semibold mb-3 ${
                 isDark ? "text-[#f5f3ff]" : "text-[#1a1625]"
               }`}
             >

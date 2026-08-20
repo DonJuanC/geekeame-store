@@ -23,7 +23,7 @@ export function AdminLayout() {
       >
         <div className="max-w-5xl mx-auto p-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-4">
-            <span className={`font-['Fredoka'] text-lg font-semibold ${isDark ? "text-[#a78bfa]" : "text-[#6d28d9]"}`}>
+            <span className={`font-['Fredoka',_sans-serif] text-lg font-semibold ${isDark ? "text-[#a78bfa]" : "text-[#6d28d9]"}`}>
               Geekeame · Admin
             </span>
             <nav className="flex gap-2 text-sm flex-wrap">

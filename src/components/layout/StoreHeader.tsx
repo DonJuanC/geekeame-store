@@ -37,7 +37,7 @@ export function StoreHeader() {
         <Link
           to="/"
           onClick={handleLogoClick}
-          className={`logo-hover-wiggle inline-block font-['Fredoka'] text-2xl font-semibold ${
+          className={`logo-hover-wiggle inline-block font-['Fredoka',_sans-serif] text-2xl font-semibold ${
             isDark ? "text-[#a78bfa]" : "text-[#6d28d9]"
           }`}
         >

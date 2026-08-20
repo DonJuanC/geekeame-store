@@ -78,7 +78,7 @@ export function LoginPage() {
       <div className="w-full max-w-sm">
         <Link
           to="/"
-          className={`logo-hover-wiggle block text-center font-['Fredoka'] text-2xl font-semibold mb-6 ${
+          className={`logo-hover-wiggle block text-center font-['Fredoka',_sans-serif] text-2xl font-semibold mb-6 ${
             isDark ? "text-[#a78bfa]" : "text-[#6d28d9]"
           }`}
         >
