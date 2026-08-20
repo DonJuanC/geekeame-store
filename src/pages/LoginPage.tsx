@@ -1,13 +1,18 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
+
+type LoginLocationState = { from?: { pathname: string; search: string } };
 
 export function LoginPage() {
   const { signIn, signInWithGoogle, resetPassword } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as LoginLocationState | null)?.from;
+  const redirectTo = from ? `${from.pathname}${from.search}` : "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +28,7 @@ export function LoginPage() {
     setIsSubmitting(true);
     try {
       await signIn(email, password);
-      navigate("/");
+      navigate(redirectTo, { replace: true });
     } catch {
       setError("No pudimos iniciar sesión. Revisa tu email y contraseña");
     } finally {
@@ -52,7 +57,7 @@ export function LoginPage() {
     setIsGoogleSubmitting(true);
     try {
       await signInWithGoogle();
-      navigate("/");
+      navigate(redirectTo, { replace: true });
     } catch {
       setError("No pudimos iniciar sesión con Google.");
     } finally {
