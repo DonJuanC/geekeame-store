@@ -23,20 +23,69 @@ export function FavoriteButton({ productId, className = "" }: FavoriteButtonProp
   const isDark = theme === "dark";
   const [pending, setPending] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
+  // Antes el corazón sin sesión era un <Link> que navegaba a /login apenas
+  // se lo tocaba -- sin aviso ni forma de cancelar, un click accidental (o
+  // por curiosidad) sacaba al usuario del catálogo sin preguntar. Ahora
+  // muestra un mensaje con la opción de cancelar antes de ir a login.
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   if (!user) {
     return (
-      <Link
-        to="/login"
-        title="Inicia sesión para guardar favoritos"
-        aria-label="Inicia sesión para guardar favoritos"
-        onClick={(e) => e.stopPropagation()}
-        className={`rounded-full w-9 h-9 flex items-center justify-center text-lg transition-transform hover:scale-110 ${
-          isDark ? "bg-[#161320]/80" : "bg-white/80"
-        } ${className}`}
-      >
-        🤍
-      </Link>
+      // Sin "relative" acá por el mismo motivo que el wrapper de abajo (ver
+      // nota más adelante): el mensaje se posiciona "absolute" contra el
+      // ancestro con position del caller (ProductCard/ProductDetailPage).
+      <span className={`inline-block ${className}`}>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowLoginPrompt((current) => !current);
+          }}
+          aria-label="Inicia sesión para guardar favoritos"
+          aria-expanded={showLoginPrompt}
+          title="Inicia sesión para guardar favoritos"
+          className={`rounded-full w-9 h-9 flex items-center justify-center text-lg transition-transform hover:scale-110 ${
+            isDark ? "bg-[#161320]/80" : "bg-white/80"
+          }`}
+        >
+          🤍
+        </button>
+        {showLoginPrompt && (
+          <div
+            role="dialog"
+            aria-label="Inicia sesión para guardar favoritos"
+            onClick={(e) => e.stopPropagation()}
+            className={`absolute top-full right-0 mt-1 w-44 rounded-lg p-2.5 text-xs shadow-lg z-20 ${
+              isDark
+                ? "bg-[#211d34] text-[#f5f3ff]"
+                : "bg-white text-[#1a1625] border border-[#ede9fe]"
+            }`}
+          >
+            <p className="mb-2">Inicia sesión para guardar favoritos.</p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowLoginPrompt(false);
+                }}
+                className={isDark ? "text-[#9ca3af]" : "text-gray-500"}
+              >
+                Cancelar
+              </button>
+              <Link
+                to="/login"
+                onClick={(e) => e.stopPropagation()}
+                className={`font-medium ${isDark ? "text-[#c4b5fd]" : "text-[#6d28d9]"}`}
+              >
+                Ir a login
+              </Link>
+            </div>
+          </div>
+        )}
+      </span>
     );
   }
 

@@ -14,6 +14,7 @@ import {
 } from "../../components/admin/ProductsTable";
 import { EmptyState } from "../../components/states/EmptyState";
 import { ErrorState } from "../../components/states/ErrorState";
+import { AdminPageTitle } from "../../components/admin/AdminPageTitle";
 
 type Status = "loading" | "idle" | "error";
 
@@ -86,15 +87,17 @@ export function AdminProductsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-xl font-bold">Productos</h1>
-        <Link
-          to="/admin/products/new"
-          className="rounded-full px-3 py-2 text-sm font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors"
-        >
-          + Nuevo producto
-        </Link>
-      </div>
+      <AdminPageTitle
+        title="Productos"
+        action={
+          <Link
+            to="/admin/products/new"
+            className="rounded-full px-3 py-2 text-sm font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors"
+          >
+            + Nuevo producto
+          </Link>
+        }
+      />
 
       <div className="flex flex-col sm:flex-row gap-2">
         <input

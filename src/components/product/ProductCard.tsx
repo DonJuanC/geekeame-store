@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "../../types/product";
 import { useCart } from "../../hooks/useCart";
@@ -7,20 +8,49 @@ import { FavoriteButton } from "./FavoriteButton";
 import { categoryLabel, categoryTagColors, themeName } from "../../utils/productDisplay";
 
 export function ProductCard({ product }: { product: Product }) {
-  const { addItem } = useCart();
+  const { items, addItem } = useCart();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const tagColors = categoryTagColors(product.categoryId);
+  // "Agregar al carrito" antes no daba ningún aviso -- el contador del
+  // carrito en el header cambiaba, pero nada en la tarjeta confirmaba el
+  // click. Se apaga solo a los 1.5s (no hace falta que el usuario lo cierre).
+  const [justAdded, setJustAdded] = useState(false);
+
+  useEffect(() => {
+    if (!justAdded) return;
+    const timeout = setTimeout(() => setJustAdded(false), 1500);
+    return () => clearTimeout(timeout);
+  }, [justAdded]);
+
+  const inCartQuantity =
+    items.find((item) => item.productId === product.id)?.quantity ?? 0;
+  const outOfStock = product.stock <= 0;
+  // Tope del lado del cliente: no deja seguir agregando una vez que la
+  // cantidad en el carrito alcanza el stock conocido. La validación real
+  // (inviolable) sigue siendo la transacción de Firestore en el checkout.
+  const atStockLimit = !outOfStock && inCartQuantity >= product.stock;
 
   function handleAdd() {
+    if (outOfStock || atStockLimit) return;
     addItem({
       productId: product.id,
       name: product.name,
       price: product.price,
       imageUrl: product.imageUrl,
       categoryId: product.categoryId,
+      stock: product.stock,
     });
+    setJustAdded(true);
   }
+
+  const buttonLabel = outOfStock
+    ? "Sin stock"
+    : justAdded
+      ? `✓ Agregado (${inCartQuantity} en el carrito)`
+      : atStockLimit
+        ? "Alcanzaste el stock disponible"
+        : "Agregar al carrito";
 
   return (
     <div
@@ -62,13 +92,14 @@ export function ProductCard({ product }: { product: Product }) {
       </Link>
       <button
         onClick={handleAdd}
-        className={`w-full border-t px-3 py-2 text-sm font-medium transition-colors ${
+        disabled={outOfStock || atStockLimit}
+        className={`w-full border-t px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
           isDark
             ? "border-[#2e2a45] text-[#c4b5fd] hover:bg-[#211d34]"
             : "border-[#ede9fe] text-[#6d28d9] hover:bg-[#f5f3ff]"
         }`}
       >
-        Agregar al carrito
+        {buttonLabel}
       </button>
     </div>
   );

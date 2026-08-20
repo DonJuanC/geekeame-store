@@ -4,6 +4,8 @@ import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../contexts/AuthContext";
 import { CartProvider } from "../contexts/CartContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
+import { ProductsProvider } from "../contexts/ProductsContext";
+import { FavoritesProvider } from "../contexts/FavoritesContext";
 
 // Wrapper único con los providers reales del proyecto (no mocks del context).
 // A diferencia del patrón "preloadedAuth/preloadedCart" de otros proyectos,
@@ -21,12 +23,24 @@ import { ThemeProvider } from "../contexts/ThemeContext";
 // useTheme(), que revienta con "useTheme debe usarse dentro de
 // <ThemeProvider>" si el árbol no lo tiene envuelto -- por eso vive acá
 // (un solo lugar) y no hay que tocar cada test individual.
+//
+// ProductsProvider/FavoritesProvider se agregaron cuando CheckoutPage pasó
+// a renderizar <StoreHeader/> (necesita useProducts para el logo) -- mismo
+// orden que main.tsx. Ambos disparan una carga real a Firestore al montar;
+// como en los tests "../services/firebase" ya viene mockeado (db: {}) pero
+// "firebase/firestore" no, esa carga falla y queda en su propio catch
+// (console.error + status "error") sin afectar las aserciones de páginas
+// que no leen de estos contexts -- ruido esperado, no una falla real.
 function Providers({ children }: { children: ReactNode }) {
   return (
     <MemoryRouter>
       <ThemeProvider>
         <AuthProvider>
-          <CartProvider>{children}</CartProvider>
+          <FavoritesProvider>
+            <ProductsProvider>
+              <CartProvider>{children}</CartProvider>
+            </ProductsProvider>
+          </FavoritesProvider>
         </AuthProvider>
       </ThemeProvider>
     </MemoryRouter>

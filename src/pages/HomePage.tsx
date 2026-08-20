@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useProducts } from "../hooks/useProducts";
 import { useTheme } from "../hooks/useTheme";
-import { ProductCard } from "../components/product/ProductCard";
+import { ProductGrid } from "../components/product/ProductGrid";
 import { StoreHeader } from "../components/layout/StoreHeader";
 import { HeroSection } from "../components/home/HeroSection";
 import { CategoryTiles } from "../components/home/CategoryTiles";
@@ -98,11 +98,7 @@ export function HomePage() {
             >
               Destacados
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {featured.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
+            <ProductGrid products={featured} />
           </div>
         )}
 
@@ -191,11 +187,7 @@ export function HomePage() {
         )}
         {status === "idle" && products.length > 0 && (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {products.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
+            <ProductGrid products={products} />
 
             {hasMore && (
               <div className="flex flex-col items-center gap-2 mt-6">

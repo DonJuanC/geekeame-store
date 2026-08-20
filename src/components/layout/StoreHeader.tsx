@@ -4,6 +4,14 @@ import { useCart } from "../../hooks/useCart";
 import { useTheme } from "../../hooks/useTheme";
 import { useProducts } from "../../hooks/useProducts";
 
+// Bug real: el carrito vive en localStorage bajo una sola clave global, sin
+// distinguir de quién es -- si el usuario A agrega productos, cierra sesión,
+// y el usuario B entra en el mismo navegador (o nadie inicia sesión), B veía
+// el carrito de A. Se limpia acá, en el único punto donde ocurre un logout
+// real (ver Grupo 2, "se mantienen favs/carrito de otro usuario al cerrar
+// sesión") -- los favoritos no tienen este problema porque viven en
+// Firestore, se refetchean por uid, y solo se ven detrás de RequireAuth.
+
 // Header de marca para las páginas del cliente (por ahora HomePage; se va
 // sumando al resto). Antes cada página armaba su propia navegación suelta
 // -- HomePage en particular tenía 3 items (sesión, carrito, pedidos) como
@@ -28,12 +36,17 @@ import { useProducts } from "../../hooks/useProducts";
 // por encima de cualquier contenido que pase debajo al hacer scroll.
 export function StoreHeader() {
   const { user, status: authStatus, signOut } = useAuth();
-  const { items } = useCart();
+  const { items, clearCart } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { goToLanding } = useProducts();
   const location = useLocation();
   const isDark = theme === "dark";
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
+
+  async function handleSignOut() {
+    await signOut();
+    clearCart();
+  }
 
   // categoryId/searchInput/showLanding viven en ProductsContext, arriba de
   // <App/> en main.tsx -- sobreviven la navegación (no son estado local de
@@ -182,7 +195,7 @@ export function StoreHeader() {
                 {user.email}
               </span>
               <button
-                onClick={() => signOut()}
+                onClick={() => void handleSignOut()}
                 aria-label="Salir"
                 className={`rounded-full border pl-3 pr-3.5 py-1.5 flex items-center gap-1.5 transition-colors ${
                   isDark

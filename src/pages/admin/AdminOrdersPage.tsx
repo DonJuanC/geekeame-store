@@ -9,6 +9,7 @@ import { OrdersTable, OrdersTableSkeleton } from "../../components/admin/OrdersT
 import { ORDER_STATUS_LABELS } from "../../constants/orderStatus";
 import { EmptyState } from "../../components/states/EmptyState";
 import { ErrorState } from "../../components/states/ErrorState";
+import { AdminPageTitle } from "../../components/admin/AdminPageTitle";
 
 type Status = "loading" | "idle" | "error";
 
@@ -88,7 +89,7 @@ export function AdminOrdersPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-bold">Pedidos</h1>
+      <AdminPageTitle title="Pedidos" />
 
       <div className="flex gap-2 text-sm flex-wrap">
         {STATUS_FILTERS.map((f) => (

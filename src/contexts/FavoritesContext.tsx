@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { FavoritesContext } from "../hooks/useFavorites";
 import type { FavoriteList } from "../types/favoriteList";
@@ -24,17 +24,30 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [loadedForUser, setLoadedForUser] = useState<typeof user | "never">(
     "never",
   );
+  // uid de la request de favoritos en curso. Si el usuario cambia (logout
+  // seguido de login de otro, por ejemplo) antes de que esta resuelva, se
+  // ignora la respuesta -- sin esto, una respuesta tardía del usuario
+  // anterior podía pisar el estado del usuario actual (bug real: "se
+  // mantienen favoritos de otro usuario").
+  const requestUidRef = useRef<string | null>(null);
 
   const runFetch = useCallback(() => {
-    if (!user) return; // nada que buscar -- list/status de abajo ya cubren este caso
+    if (!user) {
+      requestUidRef.current = null;
+      return; // nada que buscar -- list/status de abajo ya cubren este caso
+    }
+    const requestUid = user.uid;
+    requestUidRef.current = requestUid;
     return getOrCreateFavoriteList(user.uid)
       .then((result) => {
+        if (requestUidRef.current !== requestUid) return;
         setRawList(result);
         setResolvedStatus("idle");
         setError(null);
         setLoadedForUser(user);
       })
       .catch((err) => {
+        if (requestUidRef.current !== requestUid) return;
         console.error(err);
         setError("No pudimos cargar tus favoritos.");
         setResolvedStatus("error");

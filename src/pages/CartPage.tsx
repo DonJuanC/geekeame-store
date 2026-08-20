@@ -74,7 +74,13 @@ export function CartPage() {
               <div className="flex-1 min-w-[140px]">
                 <p className="font-medium text-sm">{item.name}</p>
                 <p className={isDark ? "text-[#9ca3af] text-sm" : "text-gray-600 text-sm"}>
-                  ${item.price.toLocaleString("es-CO")}
+                  ${item.price.toLocaleString("es-CO")} c/u
+                </p>
+                {/* Subtotal de la línea (precio x cantidad) -- antes solo se
+                    mostraba el precio unitario acá; el total combinado recién
+                    aparecía al final del carrito, sin desglose por producto. */}
+                <p className="text-sm font-medium mt-0.5">
+                  = ${(item.price * item.quantity).toLocaleString("es-CO")}
                 </p>
               </div>
               <div className="flex items-center gap-3 flex-wrap">
@@ -90,11 +96,19 @@ export function CartPage() {
                   >
                     -
                   </button>
-                  <span className="w-4 text-center text-sm">{item.quantity}</span>
+                  <span className="w-4 text-center text-sm" aria-label={`Cantidad: ${item.quantity}`}>
+                    {item.quantity}
+                  </span>
                   <button
                     onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                    disabled={item.stock !== undefined && item.quantity >= item.stock}
                     aria-label="Sumar uno"
-                    className={`rounded-full border w-9 h-9 flex items-center justify-center transition-colors ${
+                    title={
+                      item.stock !== undefined && item.quantity >= item.stock
+                        ? "Alcanzaste el stock disponible"
+                        : undefined
+                    }
+                    className={`rounded-full border w-9 h-9 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                       isDark
                         ? "border-[#3f3a5c] hover:bg-[#211d34]"
                         : "border-[#ddd6fe] hover:bg-[#f5f3ff]"

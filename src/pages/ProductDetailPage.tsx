@@ -26,7 +26,16 @@ export function ProductDetailPage() {
   // efecto (react-hooks/set-state-in-effect). Mismo patrón que
   // AdminProductFormPage.
   const [loadedId, setLoadedId] = useState<string | null>(null);
-  const { addItem } = useCart();
+  const { items, addItem } = useCart();
+  // Mismo aviso de "✓ Agregado" que ProductCard -- antes el botón acá
+  // tampoco daba ningún feedback visible del click.
+  const [justAdded, setJustAdded] = useState(false);
+
+  useEffect(() => {
+    if (!justAdded) return;
+    const timeout = setTimeout(() => setJustAdded(false), 1500);
+    return () => clearTimeout(timeout);
+  }, [justAdded]);
 
   useEffect(() => {
     if (!id) return;
@@ -82,6 +91,32 @@ export function ProductDetailPage() {
     );
   }
 
+  const inCartQuantity =
+    items.find((item) => item.productId === product.id)?.quantity ?? 0;
+  const outOfStock = product.stock <= 0;
+  const atStockLimit = !outOfStock && inCartQuantity >= product.stock;
+
+  function handleAdd() {
+    if (outOfStock || atStockLimit || !product) return;
+    addItem({
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      imageUrl: product.imageUrl,
+      categoryId: product.categoryId,
+      stock: product.stock,
+    });
+    setJustAdded(true);
+  }
+
+  const addButtonLabel = outOfStock
+    ? "Sin stock"
+    : justAdded
+      ? `✓ Agregado (${inCartQuantity} en el carrito)`
+      : atStockLimit
+        ? "Alcanzaste el stock disponible"
+        : "Agregar al carrito";
+
   return (
     <div className={shellClass}>
       <StoreHeader />
@@ -132,18 +167,11 @@ export function ProductDetailPage() {
               ${product.price.toLocaleString("es-CO")}
             </p>
             <button
-              onClick={() =>
-                addItem({
-                  productId: product.id,
-                  name: product.name,
-                  price: product.price,
-                  imageUrl: product.imageUrl,
-                  categoryId: product.categoryId,
-                })
-              }
-              className="rounded-full px-4 py-2.5 mt-3 font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] transition-colors"
+              onClick={handleAdd}
+              disabled={outOfStock || atStockLimit}
+              className="rounded-full px-4 py-2.5 mt-3 font-medium bg-[#7c3aed] text-white hover:bg-[#6d28d9] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Agregar al carrito
+              {addButtonLabel}
             </button>
           </div>
         </div>

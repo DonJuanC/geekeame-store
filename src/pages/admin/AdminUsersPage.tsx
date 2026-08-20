@@ -9,6 +9,7 @@ import {
 } from "../../components/admin/UsersTable";
 import { EmptyState } from "../../components/states/EmptyState";
 import { ErrorState } from "../../components/states/ErrorState";
+import { AdminPageTitle } from "../../components/admin/AdminPageTitle";
 
 type Status = "loading" | "idle" | "error";
 
@@ -71,9 +72,7 @@ export function AdminUsersPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-xl font-bold">Usuarios</h1>
-      </div>
+      <AdminPageTitle title="Usuarios" />
       <p className={`text-sm -mt-2 ${isDark ? "text-[#9ca3af]" : "text-gray-500"}`}>
         Cambiar el rol de un usuario aplica al instante -- firestore.rules
         solo permite tocar el campo "role" de un perfil ajeno, y bloquea

@@ -112,6 +112,40 @@ describe("cartReducer", () => {
     expect(next.items).toHaveLength(0);
   });
 
+  it("ADD_ITEM no supera el stock disponible (edge case, Grupo 2: deshabilitar al superar stock)", () => {
+    const withItem = cartReducer(initialCartState, {
+      type: "ADD_ITEM",
+      payload: { ...newItemPayload, stock: 2 },
+    });
+
+    const atLimit = cartReducer(withItem, {
+      type: "ADD_ITEM",
+      payload: { ...newItemPayload, stock: 2 },
+    });
+    expect(atLimit.items[0].quantity).toBe(2);
+
+    // Un tercer ADD_ITEM no debería subir más allá del stock conocido.
+    const stillAtLimit = cartReducer(atLimit, {
+      type: "ADD_ITEM",
+      payload: { ...newItemPayload, stock: 2 },
+    });
+    expect(stillAtLimit.items[0].quantity).toBe(2);
+  });
+
+  it("UPDATE_QUANTITY no supera el stock guardado en el item (edge case)", () => {
+    const withItem = cartReducer(initialCartState, {
+      type: "ADD_ITEM",
+      payload: { ...newItemPayload, stock: 3 },
+    });
+
+    const next = cartReducer(withItem, {
+      type: "UPDATE_QUANTITY",
+      payload: { productId: productFixture.id, quantity: 10 },
+    });
+
+    expect(next.items[0].quantity).toBe(3);
+  });
+
   it("CLEAR_CART vacía el carrito por completo", () => {
     const withItem = cartReducer(initialCartState, {
       type: "ADD_ITEM",
