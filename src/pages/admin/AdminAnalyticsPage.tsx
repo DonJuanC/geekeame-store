@@ -28,10 +28,6 @@ export function AdminAnalyticsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [status, setStatus] = useState<Status>("loading");
 
-  // Se traen órdenes y productos juntos: el dashboard combina ambas
-  // fuentes (top productos vendidos sale de orders, stock bajo sale de
-  // products). Mismo patrón loading/idle/error que el resto del panel
-  // admin -- nada de setState síncrono al arrancar el efecto.
   const fetchData = useCallback(() => {
     return Promise.all([listAllOrders(), listAllProductsForAdmin()])
       .then(([ordersResult, productsResult]) => {
@@ -80,7 +76,6 @@ export function AdminAnalyticsPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-bold">Analytics</h1>
 
-      {/* Ingresos solo cuentan órdenes "completed" -- ver analyticsService. */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className={cardClass}>
           <p className={`text-xs ${mutedText}`}>Ingresos totales</p>

@@ -20,15 +20,8 @@ export function ProductDetailPage() {
   const [status, setStatus] = useState<"idle" | "error" | "not-found">(
     "idle",
   );
-  // Id para el que "product"/"status" ya son válidos. Mientras no coincida
-  // con el id actual de la ruta seguimos "cargando" -- se deriva más abajo
-  // en vez de resetear con un setStatus("loading") síncrono al arrancar el
-  // efecto (react-hooks/set-state-in-effect). Mismo patrón que
-  // AdminProductFormPage.
   const [loadedId, setLoadedId] = useState<string | null>(null);
   const { items, addItem } = useCart();
-  // Mismo aviso de "✓ Agregado" que ProductCard -- antes el botón acá
-  // tampoco daba ningún feedback visible del click.
   const [justAdded, setJustAdded] = useState(false);
 
   useEffect(() => {
@@ -120,9 +113,6 @@ export function ProductDetailPage() {
   return (
     <div className={shellClass}>
       <StoreHeader />
-      {/* max-w-2xl en mobile, md:max-w-4xl para dar espacio a las 2
-          columnas -- con max-w-2xl la columna de info quedaba angosta y
-          apretada en tablet/desktop. */}
       <main className="p-4 max-w-2xl md:max-w-4xl mx-auto">
         <Link
           to="/"
@@ -133,11 +123,6 @@ export function ProductDetailPage() {
           ← Volver al catálogo
         </Link>
 
-        {/* Antes era una sola columna estirada: la imagen cuadrada de
-            ~640px dominaba la pantalla con un solo emoji chico centrado,
-            empujando precio/CTA/reseñas muy por debajo del fold en
-            tablet/desktop. De md hacia arriba pasa a imagen + info lado a
-            lado; en mobile se queda apilado igual que antes. */}
         <div className="mt-4 md:flex md:gap-8 md:items-start">
           <div className="relative md:w-1/2">
             <ProductImage

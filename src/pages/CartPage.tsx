@@ -12,9 +12,6 @@ export function CartPage() {
   const navigate = useNavigate();
 
   function handleClearCart() {
-    // A diferencia de "Eliminar producto" en el admin, esto corría en un
-    // solo click sin confirmación -- un click accidental vaciaba el
-    // carrito completo sin poder deshacer.
     const confirmed = window.confirm(
       "¿Vaciar el carrito? Se eliminarán todos los productos.",
     );
@@ -76,9 +73,6 @@ export function CartPage() {
                 <p className={isDark ? "text-[#9ca3af] text-sm" : "text-gray-600 text-sm"}>
                   ${item.price.toLocaleString("es-CO")} c/u
                 </p>
-                {/* Subtotal de la línea (precio x cantidad) -- antes solo se
-                    mostraba el precio unitario acá; el total combinado recién
-                    aparecía al final del carrito, sin desglose por producto. */}
                 <p className="text-sm font-medium mt-0.5">
                   = ${(item.price * item.quantity).toLocaleString("es-CO")}
                 </p>

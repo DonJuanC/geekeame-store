@@ -7,8 +7,6 @@ export interface CartContextValue {
   dispatch: Dispatch<CartAction>;
 }
 
-// Igual que AuthContext: el Context vive en el .ts del hook, no en el .tsx
-// del provider, para no violar react-refresh/only-export-components.
 export const CartContext = createContext<CartContextValue | undefined>(
   undefined,
 );

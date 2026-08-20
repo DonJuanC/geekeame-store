@@ -24,10 +24,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setState({ status: "unauthenticated", user: null });
         return;
       }
-      // ensureUserProfile (crea si no existe) en vez de un simple fetch:
-      // garantiza que cualquier sesión que Firebase considere válida --
-      // email/password, signUp, o Google -- termina con un perfil en
-      // Firestore y queda "authenticated" en la app.
       const profile = await ensureUserProfile(
         firebaseUser.uid,
         firebaseUser.email ?? "",
@@ -57,17 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithGoogle() {
-    // Con signInWithPopup (ver authService) esto sí resuelve con el
-    // usuario en esta misma pestaña, sin navegar afuera -- a diferencia
-    // del redirect, acá si tiene sentido actualizar el estado directo.
     setState({
       status: "authenticated",
       user: await signInWithGoogleService(),
     });
   }
 
-  // No toca "state": pedir el link de recuperación no cambia la sesión
-  // actual (ni loguea a nadie), solo dispara el email desde Firebase.
   async function resetPassword(email: string) {
     await sendPasswordResetService(email);
   }

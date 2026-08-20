@@ -13,9 +13,6 @@ import { listFeaturedCandidates } from "../services/productsService";
 import { interleaveByCategory } from "../utils/interleaveByCategory";
 import type { Product } from "../types/product";
 
-// Cantidad de productos en "Destacados". No hay flag de "featured" en
-// Firestore todavía, así que sigue siendo automático a partir de lo más
-// reciente, no una curación manual.
 const FEATURED_COUNT = 6;
 
 export function HomePage() {
@@ -36,11 +33,6 @@ export function HomePage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  // Destacados se resuelve aparte de "products" (que es la vista paginada
-  // del catálogo, category=null) -- ver interleaveByCategory arriba para
-  // el motivo. Falla silenciosa a propósito: es una vitrina decorativa, si
-  // la carga falla simplemente no se muestra la sección en vez de romper
-  // el resto del home.
   const [featured, setFeatured] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -58,12 +50,6 @@ export function HomePage() {
     };
   }, []);
 
-  // Vista "landing": el hero/tiles/destacados son bienvenida, no catálogo.
-  // showLanding (ProductsContext) es un flag aparte de categoryId/
-  // searchInput -- "Todas" también deja categoryId en null pero debe
-  // quedarse en el catálogo, no traer de vuelta el hero (ver la nota en
-  // ProductsContext.tsx). Se ocultan en vez de convivir con el resto para
-  // no repetir productos dos veces en pantalla sin motivo.
   const isDefaultView = showLanding;
 
   return (
@@ -72,15 +58,7 @@ export function HomePage() {
 
       {isDefaultView && <HeroSection />}
 
-      {/* <main> en vez de <div>: ninguna página de cliente tenía landmark
-          semántico (comparar con AdminLayout, que sí usa <main>) -- un
-          usuario que navega por landmarks no tenía forma de saltar directo
-          al contenido principal. */}
       <main className="p-4 max-w-5xl mx-auto">
-        {/* Sin esto, al buscar/filtrar no quedaba ningún heading en pantalla
-            -- ni el h1 del hero ni el h2 "Destacados" se montan fuera de la
-            vista landing. Solo cuando NO es landing: el hero ya trae su
-            propio h1, y tener dos sería redundante. */}
         {!isDefaultView && <h1 className="sr-only">Catálogo</h1>}
 
         {isDefaultView && (

@@ -22,10 +22,6 @@ export function AdminUsersPage() {
   const [updatingUid, setUpdatingUid] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Mismo patrón que AdminProductsPage: nada de setState síncrono al
-  // arrancar el efecto (react-hooks/set-state-in-effect) -- el estado
-  // inicial ya es "loading"/null, y el reintento manual (handleRetry) es
-  // quien resetea status/actionError, desde un click, no desde un efecto.
   const fetchUsers = useCallback(() => {
     return listUsers()
       .then((result) => {

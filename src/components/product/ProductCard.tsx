@@ -12,9 +12,6 @@ export function ProductCard({ product }: { product: Product }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const tagColors = categoryTagColors(product.categoryId);
-  // "Agregar al carrito" antes no daba ningún aviso -- el contador del
-  // carrito en el header cambiaba, pero nada en la tarjeta confirmaba el
-  // click. Se apaga solo a los 1.5s (no hace falta que el usuario lo cierre).
   const [justAdded, setJustAdded] = useState(false);
 
   useEffect(() => {
@@ -26,9 +23,6 @@ export function ProductCard({ product }: { product: Product }) {
   const inCartQuantity =
     items.find((item) => item.productId === product.id)?.quantity ?? 0;
   const outOfStock = product.stock <= 0;
-  // Tope del lado del cliente: no deja seguir agregando una vez que la
-  // cantidad en el carrito alcanza el stock conocido. La validación real
-  // (inviolable) sigue siendo la transacción de Firestore en el checkout.
   const atStockLimit = !outOfStock && inCartQuantity >= product.stock;
 
   function handleAdd() {

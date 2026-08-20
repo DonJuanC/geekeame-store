@@ -1,8 +1,5 @@
 interface LoadingStateProps {
   label?: string;
-  // Opcional y en false por defecto: solo Home pasa dark={theme==="dark"}
-  // hoy. El resto de los callers (admin, checkout, etc.) no lo pasan y
-  // siguen con el texto gris de siempre sobre fondo claro.
   dark?: boolean;
 }
 

@@ -1,12 +1,6 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
 
-// Layout del panel admin. Antes tenía su propio look fijo (header
-// bg-gray-900) "separado por completo de la tienda pública" -- a pedido
-// se unificó con la paleta pop geek arcade + el mismo toggle claro/oscuro
-// que el resto del sitio, en vez de mantener dos sistemas de diseño
-// distintos. Las rutas hijas (listado, alta, edición) se inyectan en
-// <Outlet />.
 export function AdminLayout() {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";

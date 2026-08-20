@@ -15,14 +15,6 @@ import { db } from "./firebase";
 import type { Order, OrderItemSnapshot, OrderStatus } from "../types/order";
 import type { Product } from "../types/product";
 
-// Checkout sin timeout era el hallazgo crítico de la auditoría UX: si la red
-// se cae a mitad de la transacción, el usuario quedaba viendo "Procesando..."
-// indefinidamente, sin poder cancelar ni saber si el pedido se creó o no.
-// Esto NO cancela la transacción de Firestore en curso (no hay forma de
-// abortar un runTransaction ya enviado) -- solo deja de esperarla y le avisa
-// al usuario, que es lo que UX necesita. Por eso el mensaje de timeout en
-// CheckoutPage es explícito sobre revisar "Mis pedidos" antes de reintentar,
-// en vez de asumir que no pasó nada.
 export class OrderTimeoutError extends Error {
   constructor() {
     super("La operación tardó demasiado.");
@@ -99,11 +91,6 @@ export async function createOrder(
   return orderRef.id;
 }
 
-// Detalle de una orden puntual (OrderDetailPage). No filtra por userId acá:
-// firestore.rules ya exige resource.data.userId == auth.uid || isAdmin()
-// para leer un doc de "orders", así que un customer que intente abrir la
-// orden de otro recibe permission-denied desde el propio SDK -- no hace
-// falta duplicar esa validación en el cliente.
 export async function getOrderById(id: string): Promise<Order | null> {
   const snap = await getDoc(doc(db, "orders", id));
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as Order) : null;
@@ -119,11 +106,6 @@ export async function listOrdersForUser(userId: string): Promise<Order[]> {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Order);
 }
 
-// Listado para el panel admin: todas las órdenes, sin filtrar por dueño
-// (firestore.rules ya exige isAdmin() para leer órdenes ajenas). El filtro
-// por estado se hace en el cliente sobre este mismo listado en vez de con
-// where("status", "==", ...) para no depender de un índice compuesto de
-// Firestore (status + orderBy(createdAt)) que habría que crear aparte.
 export async function listAllOrders(): Promise<Order[]> {
   const q = query(
     collection(db, "orders"),
@@ -134,15 +116,6 @@ export async function listAllOrders(): Promise<Order[]> {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Order);
 }
 
-// Versión en tiempo real de listAllOrders, para AdminOrdersPage: un admin
-// que deja la pestaña abierta ve pedidos nuevos (de cualquier cliente, en
-// cualquier sesión) sin tener que refrescar manualmente. Mismo shape de
-// query (sin índice compuesto adicional, ver nota de listAllOrders arriba).
-// onSnapshot entrega un primer callback con el estado actual (de cache
-// local si existe) y después uno por cada cambio -- quien llama es
-// responsable de invocar la función de unsubscribe que devuelve (ej. en el
-// cleanup de un useEffect), para no dejar el listener corriendo de más
-// después de desmontar la página.
 export function subscribeToAllOrders(
   onChange: (orders: Order[]) => void,
   onError: (error: Error) => void,
@@ -171,15 +144,6 @@ export async function updateOrderStatus(
   await updateDoc(ref, { status, updatedAt: Date.now() });
 }
 
-// Gate para reseñas (ProductReviews): solo puede reseñar un producto quien
-// ya lo compró. "Comprar" acá es cualquier orden que lo incluya salvo
-// "cancelled" -- no se exige "completed" porque eso implicaría esperar a
-// que el admin marque la entrega para poder opinar, y el negocio no pide
-// eso, solo que la compra haya sido real (no cancelada/reembolsada). Toma
-// Order[] en vez de pedir userId+productId y hacer el fetch acá adentro
-// para poder reusar el mismo listado ya cargado por OrdersPage/
-// ProductReviews sin duplicar la llamada a Firestore, y para que sea
-// trivial de testear como función pura.
 export function hasPurchasedProduct(orders: Order[], productId: string): boolean {
   return orders.some(
     (order) =>

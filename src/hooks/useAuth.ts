@@ -9,9 +9,6 @@ export interface AuthContextValue extends AuthState {
   resetPassword: (email: string) => Promise<void>;
 }
 
-// El objeto de contexto vive acá (archivo .ts, sin componentes) en vez de
-// en AuthContext.tsx: un .tsx que exporta un Context junto a un componente
-// rompe react-refresh/only-export-components.
 export const AuthContext = createContext<AuthContextValue | undefined>(
   undefined,
 );

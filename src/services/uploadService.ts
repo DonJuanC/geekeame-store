@@ -2,11 +2,6 @@ import { auth } from "./firebase";
 
 const PRESIGN_ENDPOINT = "/api/presign-upload";
 
-// Flujo de presigned URL: 1) le pedimos a la Vercel Function una URL
-// firmada (mandando el ID token del admin logueado para que la function
-// valide el rol contra Firestore); 2) subimos el archivo DIRECTO a S3 con
-// esa URL, sin pasar por nuestro backend. Las credenciales de AWS nunca
-// salen de la Vercel Function.
 export async function uploadProductImage(file: File): Promise<string> {
   const user = auth.currentUser;
   if (!user) {

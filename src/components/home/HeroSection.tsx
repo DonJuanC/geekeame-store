@@ -1,14 +1,6 @@
 import { PRODUCT_CATEGORIES } from "../../constants/categories";
 import { categoryEmoji } from "../../utils/productPlaceholder";
 
-// Posiciones/tamaños fijos por emoji (no random): con 5 categorías nada más
-// no hace falta generar nada dinámico, y valores fijos evitan que el
-// layout "salte" entre renders. Cada entrada apunta a una categoría vía
-// categoryIndex (ciclando 0-4) -- con más floaters que categorías, varios
-// emojis se repiten, y por eso el fondo se ve "lleno" en vez de 5 puntitos
-// sueltos. delay/duration variados para que floten desincronizados -- ver
-// hero-float en index.css (un solo @keyframes, la variación es toda
-// inline).
 const FLOATERS: Array<{
   categoryIndex: number;
   top: string;
@@ -38,14 +30,6 @@ const FLOATERS: Array<{
   { categoryIndex: 2, top: "24%", left: "65%", size: "text-2xl", opacity: "opacity-15", delay: "0.7s", duration: "4.9s" },
 ];
 
-// Hero de HomePage: sección de bienvenida, no de catálogo -- solo aparece
-// en la vista por defecto (sin categoría ni búsqueda activa, ver HomePage).
-// Fondo con gradiente violeta->magenta (paleta de marca) y los emojis de
-// categoría flotando de fondo, en vez de una foto de portada real: el sitio
-// no tiene fotografía de producto real todavía (placeholders vía
-// ProductImage/isPlaceholderImage), así que el gradiente + emojis mantiene
-// el mismo lenguaje visual "pop geek/arcade" sin depender de imágenes que
-// no existen.
 export function HeroSection() {
   return (
     <section

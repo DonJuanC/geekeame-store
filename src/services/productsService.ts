@@ -23,13 +23,6 @@ function stripAccents(text: string): string {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-// Prefijos en minúscula de cada palabra del nombre ("Llavero Alien" ->
-// "l","ll","lla",...,"llavero","a","al","ali","alie","alien"). Permite
-// buscar por cualquier palabra del nombre (no solo por el nombre completo
-// desde el inicio) usando array-contains, que sí soporta substring/palabra
-// parcial a diferencia del orderBy+startAt/endAt sobre nameLower que solo
-// hacía match por prefijo del NOMBRE COMPLETO (buscar "Alien" no encontraba
-// "Llavero Alien" porque el nombre no empieza por "alien").
 export function buildSearchKeywords(name: string): string[] {
   const words = stripAccents(name.toLowerCase())
     .replace(/[^a-z0-9\s]/g, " ")
@@ -45,9 +38,6 @@ export function buildSearchKeywords(name: string): string[] {
   return Array.from(keywords);
 }
 
-// Token de búsqueda: array-contains solo soporta UN valor por query, así
-// que si el usuario escribe varias palabras ("Llavero Ali") tomamos la
-// última -- es la más específica mientras sigue escribiendo.
 function searchToken(searchTerm: string): string | null {
   const words = stripAccents(searchTerm.toLowerCase())
     .replace(/[^a-z0-9\s]/g, " ")
@@ -63,18 +53,11 @@ export interface ListProductsParams {
   categoryId?: string | null;
   searchTerm?: string;
   pageSize?: number;
-  // Cursor de Firestore (el último doc de la página anterior). Se pide
-  // "cargar más" pasando el cursor devuelto por la llamada previa -- ver
-  // ProductsContext.loadMore.
   cursor?: QueryDocumentSnapshot<DocumentData> | null;
 }
 
 export interface ListProductsResult {
   products: Product[];
-  // null = no hay más páginas (o la búsqueda actual no soporta paginar,
-  // ver nota más abajo). Se guarda tal cual el QueryDocumentSnapshot en
-  // vez de solo el id/createdAt porque startAfter() de Firestore lo pide
-  // así -- reconstruir un cursor equivalente a mano es más frágil.
   nextCursor: QueryDocumentSnapshot<DocumentData> | null;
 }
 
@@ -93,12 +76,6 @@ export async function listProducts({
 
   if (token) {
     constraints.push(where("searchKeywords", "array-contains", token));
-    // Sin orderBy ni cursor acá: agregar orderBy junto al where de
-    // categoryId + el array-contains pediría un tercer índice compuesto,
-    // y sin un orden estable no hay forma correcta de paginar con
-    // startAfter. Para un catálogo chico como este, devolver hasta
-    // pageSize resultados de búsqueda sin "cargar más" es una limitación
-    // aceptable -- ver nextCursor más abajo (siempre null si hay token).
   } else {
     constraints.push(orderBy("createdAt", "desc"));
     if (cursor) constraints.push(startAfter(cursor));
@@ -110,8 +87,6 @@ export async function listProducts({
   const snap = await getDocs(q);
   const products = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Product);
 
-  // Si la página vino completa (== pageSize) asumimos que puede haber más
-  // y ofrecemos seguir paginando; si vino corta, ya no hay nada después.
   const nextCursor =
     !token && snap.docs.length === pageSize
       ? snap.docs[snap.docs.length - 1]
@@ -120,19 +95,6 @@ export async function listProducts({
   return { products, nextCursor };
 }
 
-// Candidatos para "Destacados" (HomePage), agrupados por categoría. Antes
-// esa sección salía de un simple slice de los productos más recientes SIN
-// filtro de categoría (la misma página de PRODUCTS_PAGE_SIZE que usa el
-// catálogo por defecto) -- si los últimos productos cargados en el catálogo
-// eran todos de una categoría (típico administrando por lotes), Destacados
-// quedaba monopolizado por esa categoría aunque el resto del catálogo
-// tuviera variedad de sobra, porque las demás categorías directamente no
-// entraban en esa página. Acá se pide lo más reciente de CADA categoría por
-// separado (mismo shape de query que filtrar el catálogo por categoría, ya
-// indexado) para garantizar representación real sin depender de en qué
-// posición de la paginación general haya quedado cada categoría. Quien
-// llama decide cómo combinar los grupos -- ver interleaveByCategory en
-// HomePage.tsx.
 export async function listFeaturedCandidates(
   perCategory = 2,
 ): Promise<Product[][]> {
@@ -151,11 +113,6 @@ export async function getProductById(id: string): Promise<Product | null> {
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as Product) : null;
 }
 
-// Listado para el panel admin: sin filtro de categoría/búsqueda (el admin
-// necesita ver todo el catálogo, no lo que un cliente filtró) y ordenado
-// por nombre en vez de por fecha de creación, que es más útil para
-// gestionar/ubicar productos en una tabla. maxResults en 500 para no
-// truncar el catálogo administrado.
 export async function listAllProductsForAdmin(): Promise<Product[]> {
   const q = query(collection(db, "products"), orderBy("name"), limit(500));
   const snap = await getDocs(q);

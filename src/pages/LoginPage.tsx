@@ -13,9 +13,6 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
-  // "sent" no confirma que el email tenga cuenta -- Firebase no lo revela
-  // (ver sendPasswordReset en authService), así que el mensaje es el mismo
-  // exista o no la cuenta, para no permitir enumerar usuarios registrados.
   const [resetStatus, setResetStatus] = useState<
     "idle" | "sending" | "sent" | "error"
   >("idle");
@@ -50,9 +47,6 @@ export function LoginPage() {
   }
 
   async function handleGoogle() {
-    // A diferencia del login por email (que ya usaba isSubmitting), este
-    // botón no se deshabilitaba durante la operación -- un doble click
-    // podía abrir dos popups de Google a la vez.
     if (isGoogleSubmitting) return;
     setError(null);
     setIsGoogleSubmitting(true);

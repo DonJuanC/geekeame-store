@@ -29,19 +29,8 @@ export function AdminOrdersPage() {
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  // Solo para forzar una nueva suscripción desde "Reintentar" -- onSnapshot
-  // ya reconecta solo ante caídas de red transitorias; esto es para el caso
-  // de un error no recuperable (ej. permission-denied) donde el listener
-  // quedó desconectado y hay que volver a suscribirse desde cero.
   const [retryKey, setRetryKey] = useState(0);
 
-  // Tiempo real: un admin que deja esta pestaña abierta ve pedidos nuevos
-  // de cualquier cliente sin refrescar -- antes era un fetch de una sola
-  // vez (listAllOrders) que solo se actualizaba con un reintento manual o
-  // un recargo de página. setOrders/setStatus acá corren dentro del
-  // callback de onSnapshot, no en el cuerpo síncrono del efecto (que solo
-  // llama a subscribeToAllOrders y devuelve el unsubscribe) -- no dispara
-  // react-hooks/set-state-in-effect.
   useEffect(() => {
     const unsubscribe = subscribeToAllOrders(
       (result) => {
@@ -68,10 +57,6 @@ export function AdminOrdersPage() {
     setUpdatingId(order.id);
     setActionError(null);
     try {
-      // Sin actualización optimista en memoria: la suscripción de arriba
-      // ya refleja el cambio apenas Firestore lo confirma (el propio SDK
-      // hace un eco casi instantáneo desde cache local), así que mantener
-      // un setOrders manual acá sería estado duplicado sin necesidad.
       await updateOrderStatus(order.id, newStatus);
     } catch (err) {
       setActionError(

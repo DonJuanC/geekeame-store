@@ -10,11 +10,6 @@ import {
 import { db } from "./firebase";
 import type { Review, ReviewInput } from "../types/review";
 
-// Id determinístico "productId_userId" en vez de uno autogenerado: un mismo
-// usuario solo puede tener UNA review por producto, así que volver a
-// calificar el mismo producto pisa (setDoc) la review anterior en vez de
-// crear un duplicado. Evita tener que hacer una query extra para chequear
-// "¿ya calificó este producto?" antes de escribir.
 function reviewDocId(productId: string, userId: string): string {
   return `${productId}_${userId}`;
 }
@@ -53,11 +48,6 @@ export interface ReviewSummary {
   count: number;
 }
 
-// Promedio calculado en el cliente sobre la lista ya traída por
-// listReviewsForProduct, en vez de mantener un contador agregado en el doc
-// del producto: para el volumen de este catálogo (unas pocas reviews por
-// producto) evita la complejidad de mantener ese agregado consistente con
-// una transacción en cada create/update/delete de review.
 export function summarizeReviews(reviews: Review[]): ReviewSummary {
   if (reviews.length === 0) return { average: 0, count: 0 };
   const sum = reviews.reduce((acc, r) => acc + r.rating, 0);

@@ -7,13 +7,6 @@ interface CategoryTilesProps {
   dark: boolean;
 }
 
-// Navegación rápida por categoría desde la vista por defecto de Home --
-// mismo setCategoryId que ya usan los pills de filtro (StoreHeader/HomePage
-// los deja intactos), solo que acá cada categoría es un tile grande con su
-// emoji, más fácil de "hojear" que la fila chica de pills. El color de cada
-// tile sale de placeholderColor(id) -- el mismo hash determinístico que ya
-// usa ProductImage para las cards sin foto real, así que la paleta se ve
-// consistente entre el hero, estos tiles y el catálogo.
 export function CategoryTiles({ onSelect, dark }: CategoryTilesProps) {
   return (
     <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">

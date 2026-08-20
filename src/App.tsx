@@ -15,11 +15,6 @@ import { FavoritesPage } from "./pages/FavoritesPage";
 import { useTheme } from "./hooks/useTheme";
 import { LoadingState } from "./components/states/LoadingState";
 
-// Todo el panel admin en chunks aparte, cargados solo al navegar a /admin --
-// antes AdminAnalyticsPage y AdminProductFormPage (las páginas más pesadas
-// del proyecto) iban en el mismo bundle de 862KB que HomePage, aunque un
-// cliente normal nunca las visite. React.lazy espera un default export;
-// estas páginas usan named exports, de ahí el .then(...) de cada import.
 const AdminLayout = lazy(() =>
   import("./pages/admin/AdminLayout").then((m) => ({ default: m.AdminLayout })),
 );
@@ -49,9 +44,6 @@ const AdminUsersPage = lazy(() =>
   })),
 );
 
-// Un solo Suspense envolviendo AdminLayout alcanza para las 4 sub-rutas
-// también: se renderizan vía <Outlet/> dentro de AdminLayout, así que
-// quedan dentro del mismo boundary sin necesitar uno propio cada una.
 function AdminFallback() {
   const { theme } = useTheme();
   return <LoadingState label="Cargando panel admin..." dark={theme === "dark"} />;

@@ -8,9 +8,6 @@ import { ErrorState } from "../components/states/ErrorState";
 import type { Order } from "../types/order";
 import { ORDER_STATUS_LABELS } from "../constants/orderStatus";
 
-// permission-denied es el caso real acá: firestore.rules solo deja leer una
-// orden a su dueño o a un admin, así que un customer que edite la URL para
-// mirar la orden de otro recibe ese código en vez de "not-found".
 function friendlyError(err: unknown): string {
   const code = (err as { code?: string })?.code;
   if (code === "permission-denied") {
@@ -28,9 +25,6 @@ export function OrderDetailPage() {
     "idle",
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // Mismo patrón que ProductDetailPage/AdminProductFormPage: "loadedId"
-  // marca para qué id ya son válidos order/status, en vez de resetear con
-  // un setStatus("loading") síncrono al arrancar el efecto.
   const [loadedId, setLoadedId] = useState<string | null>(null);
 
   useEffect(() => {

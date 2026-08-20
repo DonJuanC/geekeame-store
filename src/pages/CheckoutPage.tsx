@@ -15,16 +15,11 @@ export function CheckoutPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
-  // "Ya no hay stock suficiente..." (ver ordersService.createOrder) explica
-  // qué pasó pero no daba un camino directo de vuelta al carrito -- el
-  // usuario tenía que adivinar que hay que ir a ajustar cantidades.
   const [isStockError, setIsStockError] = useState(false);
 
   async function handleConfirm() {
     if (!user || status === "submitting") return;
 
-    // Chequeo temprano: si el navegador ya sabe que no hay red, ni vale la
-    // pena esperar los 20s del timeout de createOrder -- avisamos de una vez.
     if (!navigator.onLine) {
       setStatus("error");
       setError("Estás sin conexión. Conéctate a internet e intenta de nuevo.");
@@ -50,10 +45,6 @@ export function CheckoutPage() {
     } catch (err) {
       setStatus("error");
       if (err instanceof OrderTimeoutError) {
-        // No sabemos si la transacción de Firestore terminó de todos modos
-        // (no hay forma de cancelarla desde el cliente) -- por eso el
-        // mensaje manda a revisar "Mis pedidos" en vez de solo "reintenta",
-        // para no arriesgar un pedido duplicado si sí se creó.
         setError(
           "Esto está tardando más de lo normal. Revisa tu conexión: si el pedido no aparece en \"Mis pedidos\" en un momento, puedes intentar de nuevo.",
         );

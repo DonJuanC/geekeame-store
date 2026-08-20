@@ -13,10 +13,6 @@ import { StarRating } from "./StarRating";
 import { LoadingState } from "../states/LoadingState";
 import { ErrorState } from "../states/ErrorState";
 
-// Muestra solo la parte antes de la @: no hay displayName en UserProfile
-// todavía, y mostrar el email completo de otro usuario en una review
-// pública que ve cualquiera (logueado o no, ver firestore.rules) expone
-// más de lo necesario para lo que aporta acá.
 function displayName(email: string): string {
   return email.split("@")[0] ?? email;
 }
@@ -36,28 +32,17 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  // La propia review del usuario se precarga en el form UNA sola vez (al
-  // llegar por primera vez, ver everPrefilled más abajo), no en cada
-  // fetchReviews: si no, cada re-fetch (ej. después de guardar) pisaría lo
-  // que el usuario está escribiendo en ese momento.
   const [submitStatus, setSubmitStatus] = useState<
     "idle" | "submitting" | "error"
   >("idle");
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Gate de "reseña solo si compraste": null mientras se resuelve (para no
-  // mostrar el form un instante y esconderlo después), true/false una vez
-  // que se sabe. rawCanReview/canReviewForKey solo se escriben dentro del
-  // .then (async, no dispara react-hooks/set-state-in-effect) -- canReview
-  // de abajo deriva null directo en el render mientras la key (usuario +
-  // producto) actual no coincida con la última resuelta, para no arrastrar
-  // el resultado de otra persona/producto.
   const [rawCanReview, setRawCanReview] = useState<boolean | null>(null);
   const [canReviewForKey, setCanReviewForKey] = useState<string | null>(null);
   const reviewKey = user ? `${user.uid}:${productId}` : null;
 
   useEffect(() => {
-    if (!user) return; // canReview de abajo ya deriva null
+    if (!user) return;
     let cancelled = false;
     listOrdersForUser(user.uid).then((orders) => {
       if (cancelled) return;
@@ -72,11 +57,6 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   const canReview =
     reviewKey && canReviewForKey === reviewKey ? rawCanReview : null;
 
-  // runFetchReviews no pone "loading" síncrono -- status ya arranca en
-  // "loading" (useState inicial arriba), así que el fetch del mount no
-  // necesita resetearlo. fetchReviews sí lo hace (setStatus("loading")
-  // síncrono) pero solo se llama desde handlers (retry, submit), nunca
-  // desde el efecto de mount -- ahí no aplica react-hooks/set-state-in-effect.
   const runFetchReviews = useCallback(() => {
     return listReviewsForProduct(productId)
       .then((result) => {
@@ -100,11 +80,6 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
 
   const ownReview = user && reviews.find((r) => r.userId === user.uid);
 
-  // Ajuste de estado durante el render (no en un efecto): precarga rating/
-  // comment con la reseña propia UNA sola vez, la primera vez que aparece.
-  // Llamar setState acá, condicionado, es el patrón que React documenta
-  // para "inicializar estado editable a partir de un valor externo" sin el
-  // render extra de un efecto -- ver https://react.dev/learn/you-might-not-need-an-effect.
   const [everPrefilled, setEverPrefilled] = useState(false);
   if (!everPrefilled && ownReview) {
     setEverPrefilled(true);

@@ -24,9 +24,6 @@ export function OrdersPage() {
   const confirmedId = searchParams.get("confirmed");
   const [orders, setOrders] = useState<Order[]>([]);
   const [status, setStatus] = useState<"idle" | "error">("idle");
-  // Uid para el que "orders"/"status" ya son válidos. Mismo patrón que
-  // ProductDetailPage/AdminProductFormPage para no resetear "loading" de
-  // forma síncrona al arrancar el efecto (react-hooks/set-state-in-effect).
   const [loadedUid, setLoadedUid] = useState<string | null>(null);
 
   useEffect(() => {

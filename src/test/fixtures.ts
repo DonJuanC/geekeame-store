@@ -2,9 +2,6 @@ import type { Product } from "../types/product";
 import type { CartItem } from "../types/cart";
 import type { UserProfile } from "../types/auth";
 
-// Fixtures centrales: si cambia el modelo de dominio, se actualizan acá
-// y todos los tests que los usan quedan alineados.
-
 export const productFixture: Product = {
   id: "p_1",
   name: "Pin Geek de prueba",

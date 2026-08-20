@@ -28,12 +28,6 @@ export function AdminProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string | "all">("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Nada de setState síncrono al arrancar acá (ni "loading" ni limpiar
-  // actionError): el estado inicial ya es "loading"/null, y resetearlos
-  // igual al arrancar el efecto dispara react-hooks/set-state-in-effect
-  // (la regla nueva de eslint-plugin-react-hooks v7). El reintento manual
-  // sí necesita resetear ambos explícitamente -- lo hace handleRetry, que
-  // corre desde un click, no desde un efecto.
   const fetchProducts = useCallback(() => {
     return listAllProductsForAdmin()
       .then((result) => {

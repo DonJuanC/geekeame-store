@@ -2,8 +2,6 @@ interface EmptyStateProps {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
-  // Ver nota en LoadingState.tsx: opcional, false por defecto, solo Home
-  // lo pasa hoy.
   dark?: boolean;
 }
 

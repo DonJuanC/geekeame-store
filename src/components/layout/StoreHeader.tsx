@@ -4,36 +4,6 @@ import { useCart } from "../../hooks/useCart";
 import { useTheme } from "../../hooks/useTheme";
 import { useProducts } from "../../hooks/useProducts";
 
-// Bug real: el carrito vive en localStorage bajo una sola clave global, sin
-// distinguir de quién es -- si el usuario A agrega productos, cierra sesión,
-// y el usuario B entra en el mismo navegador (o nadie inicia sesión), B veía
-// el carrito de A. Se limpia acá, en el único punto donde ocurre un logout
-// real (ver Grupo 2, "se mantienen favs/carrito de otro usuario al cerrar
-// sesión") -- los favoritos no tienen este problema porque viven en
-// Firestore, se refetchean por uid, y solo se ven detrás de RequireAuth.
-
-// Header de marca para las páginas del cliente (por ahora HomePage; se va
-// sumando al resto). Antes cada página armaba su propia navegación suelta
-// -- HomePage en particular tenía 3 items (sesión, carrito, pedidos) como
-// hijos directos de un flex justify-between sin wrap controlado, lo que en
-// mobile angosto los apretaba/cortaba. Acá el grupo de la derecha
-// (carrito/pedidos/sesión) vive junto en un solo flex con flex-wrap, así
-// que en pantallas chicas baja de línea como grupo en vez de romperse
-// pieza por pieza.
-//
-// Colores como valores arbitrarios (bg-[#...]) en vez de bg-brand-600: el
-// @theme custom de index.css no se está procesando en este setup (ver
-// nota ahí), así que los tokens con nombre no generaban CSS real. Por el
-// mismo motivo el toggle de tema no usa el dark: variant de Tailwind (que
-// en v4 requiere @custom-variant en CSS, otra directiva custom -- mismo
-// riesgo que @theme) sino un booleano de useTheme() que elige entre dos
-// sets de clases arbitrarias ya confirmadas funcionando.
-//
-// z-20 en el header (antes z-10, igual que el corazón de FavoriteButton en
-// ProductCard): con el mismo z-index, el corazón -- que viene después en
-// el DOM -- ganaba el empate y se pintaba encima del header sticky al
-// scrollear, en vez de quedar tapado detrás. El header necesita quedar
-// por encima de cualquier contenido que pase debajo al hacer scroll.
 export function StoreHeader() {
   const { user, status: authStatus, signOut } = useAuth();
   const { items, clearCart } = useCart();
@@ -48,18 +18,6 @@ export function StoreHeader() {
     clearCart();
   }
 
-  // categoryId/searchInput/showLanding viven en ProductsContext, arriba de
-  // <App/> en main.tsx -- sobreviven la navegación (no son estado local de
-  // HomePage). El logo es la única puerta de vuelta al "home completo"
-  // (hero/tiles/destacados, ver showLanding): goToLanding() limpia filtro
-  // y búsqueda Y prende showLanding -- distinto del pill "Todas" del
-  // catálogo, que limpia el filtro pero se queda en el catálogo (ver
-  // ProductsContext.tsx). Sin esto, si venías filtrando por una categoría,
-  // "volver a home" cambiaba de ruta pero el filtro seguía activo, o si ya
-  // estabas en "/" el Link ni navegaba (misma ruta) -- en ambos casos el
-  // click en el logo parecía "no llevar a ningún lado". El scroll al top
-  // es aparte porque cuando ya se está en "/" el Link no dispara el
-  // efecto de ScrollToTop de App.tsx (la ruta no cambia).
   function handleLogoClick() {
     goToLanding();
     if (location.pathname === "/") {
@@ -172,13 +130,6 @@ export function StoreHeader() {
           )}
 
           {authStatus === "loading" ? (
-            // Placeholder neutro mientras Firebase Auth rehidrata la sesión
-            // desde IndexedDB (onAuthStateChanged en AuthContext, ~1-2s en
-            // un refresh completo): antes esta rama no existía y el header
-            // mostraba "Iniciar sesión" un instante aunque hubiera sesión
-            // activa, porque solo miraba truthy/falsy de "user" -- nunca el
-            // status "loading" que AuthState ya distingue. Tamaño similar a
-            // los botones reales para no saltar el layout cuando resuelve.
             <div
               aria-hidden="true"
               className={`rounded-full w-28 h-9 animate-pulse ${
@@ -210,12 +161,6 @@ export function StoreHeader() {
               </button>
             </div>
           ) : (
-            // Violeta (#7c3aed), no magenta: en todo el resto del sitio el
-            // violeta es "acción principal" (Confirmar pedido, Agregar al
-            // carrito, Ingresar, Crear producto) y el magenta es "acento"
-            // (precio, badge). El CTA más visible para un visitante sin
-            // sesión no debería romper esa convención justo en el punto de
-            // conversión más importante del header.
             <Link
               to="/login"
               aria-label="Iniciar sesión"

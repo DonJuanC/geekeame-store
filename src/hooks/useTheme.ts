@@ -7,9 +7,6 @@ export interface ThemeContextValue {
   toggleTheme: () => void;
 }
 
-// Mismo motivo que AuthContext/CartContext/ProductsContext: el Context
-// vive en el .ts del hook, no en el .tsx del provider, para no romper
-// react-refresh/only-export-components.
 export const ThemeContext = createContext<ThemeContextValue | undefined>(
   undefined,
 );

@@ -108,11 +108,6 @@ export function AdminProductFormPage() {
   const [imageUploadError, setImageUploadError] = useState<string | null>(
     null,
   );
-  // Id para el que "fields"/"status" ya son válidos. Mientras no coincida
-  // con el id actual de la ruta seguimos "cargando" -- se deriva más abajo
-  // en vez de resetear con un setStatus("loading") síncrono al arrancar el
-  // efecto (react-hooks/set-state-in-effect). Extraído a fetchProduct para
-  // poder reusarlo desde el botón "Reintentar".
   const [loadedId, setLoadedId] = useState<string | null>(null);
 
   function fetchProduct(targetId: string) {
@@ -140,10 +135,6 @@ export function AdminProductFormPage() {
         console.error(err);
         setLoadedId(targetId);
         setStatus("error");
-        // friendlyError(null) antes: nunca detectaba permission-denied, y el
-        // mensaje fijo hablaba de "guardar" cuando en realidad esto pasa al
-        // *cargar* el producto -- confuso para un admin que, por ejemplo, no
-        // tiene permisos o abre un producto ya borrado.
         setGlobalError(
           friendlyError(
             err,
@@ -181,7 +172,6 @@ export function AdminProductFormPage() {
 
   async function handleImageChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    // Permite volver a elegir el mismo archivo si la subida anterior falló.
     e.target.value = "";
     if (!file) return;
 
@@ -256,8 +246,6 @@ export function AdminProductFormPage() {
   );
 
   if (isLoadingProduct) {
-    // LoadingState en vez del <p> a mano: era el único lugar del panel
-    // admin que no reusaba el componente compartido.
     return <LoadingState label="Cargando producto…" dark={isDark} />;
   }
 
@@ -288,13 +276,6 @@ export function AdminProductFormPage() {
     isDark ? "bg-[#161320] border-[#2e2a45] text-[#f5f3ff]" : "border-[#ede9fe]"
   }`;
   const errorClass = isDark ? "text-[#f87171] text-sm mt-1" : "text-red-600 text-sm mt-1";
-  // Antes el form era una columna suelta de label+input sin agrupar, con un
-  // preview de 80x80 -- se veía "de admin viejo" comparado con el resto del
-  // sitio, que envuelve todo en cards rounded-xl. Ahora vive en la misma
-  // card que las tablas de ProductsTable/OrdersTable, con la imagen como
-  // dropzone cuadrado (mismo aspect-square que usa la imagen en todo el
-  // resto del sitio -- ver ProductCard/ProductDetailPage) en vez de un
-  // <input type=file> nativo suelto.
   const cardClass = `rounded-2xl border p-5 sm:p-6 ${
     isDark ? "bg-[#1c1a29] border-[#2e2a45]" : "border-[#ede9fe]"
   }`;
