@@ -42,6 +42,9 @@ export function AdminLayout() {
               <NavLink to="/admin/analytics" className={navLinkClass}>
                 Analytics
               </NavLink>
+              <NavLink to="/admin/users" className={navLinkClass}>
+                Usuarios
+              </NavLink>
             </nav>
           </div>
           <div className="flex items-center gap-2 text-sm">

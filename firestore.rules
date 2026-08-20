@@ -25,17 +25,33 @@ service cloud.firestore {
 
     // Perfil de usuario: cada quien lee/crea el suyo (se crea una sola vez
     // en el signup, ver authService.ts → ensureUserProfile). El rol se fija
-    // en "customer" al crear y no se puede cambiar en el update (compara
-    // contra resource.data.role): así ningún cliente puede auto-asignarse
-    // admin, ni al crear su perfil ni editándolo después.
+    // en "customer" al crear y no se puede cambiar en el update propio
+    // (compara contra resource.data.role): así ningún cliente puede
+    // auto-asignarse admin, ni al crear su perfil ni editándolo después.
+    // Un admin sí puede cambiar el rol de OTRO usuario (panel
+    // /admin/users) -- nunca el propio, para no auto-degradarse por error
+    // -- y únicamente ese campo, nada más del perfil ajeno.
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && (
+        request.auth.uid == userId
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+
       allow create: if request.auth != null
         && request.auth.uid == userId
         && request.resource.data.role == 'customer';
-      allow update: if request.auth != null
-        && request.auth.uid == userId
-        && request.resource.data.role == resource.data.role;
+
+      allow update: if request.auth != null && (
+        (
+          request.auth.uid == userId
+          && request.resource.data.role == resource.data.role
+        ) || (
+          request.auth.uid != userId
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role'])
+          && request.resource.data.role in ['customer', 'admin']
+        )
+      );
     }
 
     // Catálogo: lectura pública (lo ve cualquiera, logueado o no).

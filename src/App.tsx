@@ -43,6 +43,11 @@ const AdminAnalyticsPage = lazy(() =>
     default: m.AdminAnalyticsPage,
   })),
 );
+const AdminUsersPage = lazy(() =>
+  import("./pages/admin/AdminUsersPage").then((m) => ({
+    default: m.AdminUsersPage,
+  })),
+);
 
 // Un solo Suspense envolviendo AdminLayout alcanza para las 4 sub-rutas
 // también: se renderizan vía <Outlet/> dentro de AdminLayout, así que
@@ -109,6 +114,7 @@ function App() {
           <Route path="products/:id/edit" element={<AdminProductFormPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="analytics" element={<AdminAnalyticsPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
         </Route>
       </Routes>
     </>
